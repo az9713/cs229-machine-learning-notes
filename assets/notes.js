@@ -1,0 +1,8 @@
+
+const search=document.querySelector('#search');
+if(matchMedia('(max-width:950px)').matches){const toc=document.querySelector('.toc');if(toc)toc.open=false;}
+if(search)search.addEventListener('input',()=>{let n=0;for(const card of document.querySelectorAll('.card')){card.hidden=!card.textContent.toLowerCase().includes(search.value.toLowerCase());if(!card.hidden)n++}document.querySelector('#search-status').textContent=n+' chapters shown';});
+const solutions=document.querySelector('#solutions');if(solutions)solutions.addEventListener('click',()=>{const ds=[...document.querySelectorAll('main details')];const open=ds.some(d=>!d.open);ds.forEach(d=>d.open=open);solutions.textContent=open?'Hide solutions':'Show solutions';});
+const printButton=document.querySelector('#print');if(printButton)printButton.addEventListener('click',()=>window.print());
+for(const pre of document.querySelectorAll('pre:has(code)')){const button=document.createElement('button');button.textContent='Copy code';button.type='button';button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(pre.querySelector('code').textContent);button.textContent='Copied';}catch{button.textContent='Select code to copy';const range=document.createRange();range.selectNodeContents(pre.querySelector('code'));const selection=getSelection();selection.removeAllRanges();selection.addRange(range);}});pre.before(button);}
+let prior=[];window.addEventListener('beforeprint',()=>{prior=[...document.querySelectorAll('main details')].map(d=>[d,d.open]);prior.forEach(([d])=>d.open=true)});window.addEventListener('afterprint',()=>prior.forEach(([d,o])=>d.open=o));

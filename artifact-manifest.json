@@ -1,0 +1,192 @@
+{
+  "artifacts": [
+    {
+      "path": "index.html",
+      "purpose": "index",
+      "source_dependencies": [
+        "DATnpGoGhM8",
+        "cmNIMjPYdgM",
+        "uJF_gL3jhxI",
+        "8gVi4Rk21Eg",
+        "zRdE8A4UZes",
+        "llnEgyyuYkQ",
+        "fRM41w9jzQo",
+        "ne2ngVAoMG8",
+        "bSmIGBCoffA",
+        "sUS-eTa0l6s",
+        "dqUMCzWjZSI",
+        "_kREM2UAiJ8",
+        "lNTajqxxOn4",
+        "pwQ0l4hFCVI",
+        "hHC-SF3utxg",
+        "xveNBYVTrqw",
+        "J7CossjMvEg"
+      ]
+    },
+    {
+      "path": "lecture-01.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "DATnpGoGhM8"
+      ]
+    },
+    {
+      "path": "lecture-02.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "cmNIMjPYdgM"
+      ]
+    },
+    {
+      "path": "lecture-03.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "uJF_gL3jhxI"
+      ]
+    },
+    {
+      "path": "lecture-04.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "8gVi4Rk21Eg"
+      ]
+    },
+    {
+      "path": "lecture-05.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "zRdE8A4UZes"
+      ]
+    },
+    {
+      "path": "lecture-06.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "llnEgyyuYkQ"
+      ]
+    },
+    {
+      "path": "lecture-07.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "fRM41w9jzQo"
+      ]
+    },
+    {
+      "path": "lecture-08.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "ne2ngVAoMG8"
+      ]
+    },
+    {
+      "path": "lecture-09.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "bSmIGBCoffA"
+      ]
+    },
+    {
+      "path": "lecture-10.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "sUS-eTa0l6s"
+      ]
+    },
+    {
+      "path": "lecture-11.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "dqUMCzWjZSI"
+      ]
+    },
+    {
+      "path": "lecture-12.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "_kREM2UAiJ8"
+      ]
+    },
+    {
+      "path": "lecture-13.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "lNTajqxxOn4"
+      ]
+    },
+    {
+      "path": "lecture-14.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "pwQ0l4hFCVI"
+      ]
+    },
+    {
+      "path": "lecture-16.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "hHC-SF3utxg"
+      ]
+    },
+    {
+      "path": "lecture-18.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "xveNBYVTrqw"
+      ]
+    },
+    {
+      "path": "lecture-20.html",
+      "purpose": "Reading chapter",
+      "source_dependencies": [
+        "J7CossjMvEg"
+      ]
+    },
+    {
+      "path": "source-map.html",
+      "purpose": "source map",
+      "source_dependencies": [
+        "DATnpGoGhM8",
+        "cmNIMjPYdgM",
+        "uJF_gL3jhxI",
+        "8gVi4Rk21Eg",
+        "zRdE8A4UZes",
+        "llnEgyyuYkQ",
+        "fRM41w9jzQo",
+        "ne2ngVAoMG8",
+        "bSmIGBCoffA",
+        "sUS-eTa0l6s",
+        "dqUMCzWjZSI",
+        "_kREM2UAiJ8",
+        "lNTajqxxOn4",
+        "pwQ0l4hFCVI",
+        "hHC-SF3utxg",
+        "xveNBYVTrqw",
+        "J7CossjMvEg"
+      ]
+    },
+    {
+      "path": "study-guide.html",
+      "purpose": "study guide",
+      "source_dependencies": [
+        "DATnpGoGhM8",
+        "cmNIMjPYdgM",
+        "uJF_gL3jhxI",
+        "8gVi4Rk21Eg",
+        "zRdE8A4UZes",
+        "llnEgyyuYkQ",
+        "fRM41w9jzQo",
+        "ne2ngVAoMG8",
+        "bSmIGBCoffA",
+        "sUS-eTa0l6s",
+        "dqUMCzWjZSI",
+        "_kREM2UAiJ8",
+        "lNTajqxxOn4",
+        "pwQ0l4hFCVI",
+        "hHC-SF3utxg",
+        "xveNBYVTrqw",
+        "J7CossjMvEg"
+      ]
+    }
+  ]
+}

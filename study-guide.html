@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; object-src 'none'"><meta name="description" content="Independent transcript-grounded CS229 study notes with mathematical derivations, timestamped recordings, exercises and primary references."><title>Study guide | CS229 study notes</title><link rel="stylesheet" href="assets/notes.css"><script src="assets/math-config.js"></script><script defer src="assets/mathjax-tex-svg.js"></script><script defer src="assets/notes.js"></script></head><body><a class="skip" href="#main">Skip to content</a><header class="top"><div class="shell"><a class="brand" href="index.html">CS229 / STUDY NOTES</a><nav aria-label="Course navigation"><a href="index.html#chapters">Chapters</a><a href="source-map.html">Source map</a><a href="study-guide.html">Study guide</a></nav></div></header><div class="shell layout"><main id="main"><h1 id="study-guide-machine-learning-as-estimation-geometry-and-control">Study guide — machine learning as estimation, geometry, and control</h1>
+<p>These chapters are intended for a mathematically mature reader. Linear algebra, multivariable calculus, probability, and basic programming are assumed; each chapter introduces its model-specific notation. Follow the playlist order on a first pass, then use the connections below for a second, more synthetic reading.</p>
+<h2 id="a-route-through-the-material">A route through the material</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Chapters</th>
+<th>Central question</th>
+<th>Check your understanding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Statistical estimation</td>
+<td><a href="lecture-01.html">1</a>, <a href="lecture-02.html">2</a>, <a href="lecture-03.html">3</a>, <a href="lecture-04.html">4</a>, <a href="lecture-05.html">5</a></td>
+<td>What distribution or decision rule does the objective estimate?</td>
+<td>Derive squared-loss and logistic gradients; distinguish conditional from joint modeling.</td>
+</tr>
+<tr>
+<td>Generalization and computation</td>
+<td><a href="lecture-06.html">6</a>, <a href="lecture-07.html">7</a>, <a href="lecture-08.html">8</a></td>
+<td>Which errors arise from data, capacity, optimization, and implementation?</td>
+<td>Keep validation independent and calculate a backpropagation step by hand.</td>
+</tr>
+<tr>
+<td>Latent variables and representations</td>
+<td><a href="lecture-09.html">9</a>, <a href="lecture-10.html">10</a>, <a href="lecture-11.html">11</a>, <a href="lecture-12.html">12</a>, <a href="lecture-13.html">13</a></td>
+<td>How do hidden structure and learned geometry support prediction or generation?</td>
+<td>Derive the EM bound, PCA projection, diffusion forward marginal, and contrastive loss.</td>
+</tr>
+<tr>
+<td>Sequence models and adaptation</td>
+<td><a href="lecture-14.html">14</a>, <a href="lecture-16.html">16</a></td>
+<td>How is a conditional token distribution represented and adapted?</td>
+<td>Track tensor shapes, causal masks, cache bytes, and response-only supervision.</td>
+</tr>
+<tr>
+<td>Decision-making and learning from outcomes</td>
+<td><a href="lecture-18.html">18</a>, <a href="lecture-20.html">20</a></td>
+<td>How do actions affect future data and reward?</td>
+<td>Derive the Bellman equation, score-function gradient, and baseline identity.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Lecture numbers 15, 17, and 19 are absent from the supplied playlist. The chapter numbering preserves that fact.</p>
+<h2 id="connection-1-conditional-expectations-recur-everywhere">Connection 1: conditional expectations recur everywhere</h2>
+<p>Under squared loss, the population-optimal predictor is $f^*(x)=\mathbb E[Y\mid X=x]$. A value function is also a conditional expectation, this time of future return. In diffusion denoising, squared-error training estimates a conditional noise expectation. The targets differ, but the orthogonal-projection interpretation is shared.</p>
+<p><strong>Independent derivation.</strong> For any square-integrable $Y$ and predictor $f(X)$, expand $Y-f(X)=[Y-\mathbb E(Y\mid X)]+[\mathbb E(Y\mid X)-f(X)]$. The cross term has expectation zero because the first bracket has conditional mean zero. Therefore</p>
+<p>$$\mathbb E[(Y-f(X))^2]=\mathbb E[\operatorname{Var}(Y\mid X)]+\mathbb E[(\mathbb E[Y\mid X]-f(X))^2].$$</p>
+<p>This separates irreducible conditional variation from approximation error. It does not, by itself, account for finite-sample estimation or optimization error.</p>
+<h2 id="connection-2-normalization-creates-probabilities-and-geometry">Connection 2: normalization creates probabilities and geometry</h2>
+<p>The exponential family's log-partition function normalizes a density. Softmax normalizes class scores, attention weights, and contrastive candidate scores. Derivatives of a log-sum-exp produce normalized weights; second derivatives produce a covariance structure. Recognizing this pattern makes several apparently unrelated gradient calculations familiar.</p>
+<p>Normalization also changes meaning. An attention row sums to one across positions; a contrastive row sums to one across candidates; a vocabulary softmax sums to one across token types. Their axes and events are different, so their numerical values cannot be interpreted interchangeably.</p>
+<h2 id="connection-3-latent-variable-learning-is-alternating-inference-and-fitting">Connection 3: latent-variable learning is alternating inference and fitting</h2>
+<p>EM alternates computing a posterior over latent assignments and fitting parameters to weighted sufficient statistics. Diffusion uses a constructed noising process to make particular conditional distributions tractable. Both rely on carefully chosen auxiliary distributions, but they do not have the same optimization algorithm or the same guarantees.</p>
+<p>When reading a new generative-model paper, identify which distributions are defined, which are learned, which can be sampled, and which can be evaluated pointwise. Many confusing derivations become clear once these four roles are separated.</p>
+<h2 id="connection-4-the-objective-does-not-define-the-entire-system">Connection 4: the objective does not define the entire system</h2>
+<p>Two models with the same loss can differ because of data, architecture, initialization, optimization, inference, and evaluation. Two agent systems with identical model weights can differ because of retrieval, tools, verification, and search. The retrieval and reinforcement-learning chapters therefore expand the unit of study from a predictor to a procedure that acquires information and acts.</p>
+<h2 id="three-original-research-projects">Three original research projects</h2>
+<ol>
+<li><strong>A controlled representation experiment.</strong> Generate data with two independent factors, train a classifier on only one factor, then compare linear probing and fine-tuning on the other. Vary how much information the representation preserves. Distinguish insufficient representation from insufficient downstream labels.</li>
+<li><strong>A numerically checked policy-gradient lab.</strong> Enumerate all trajectories of a tiny finite MDP and compute the exact gradient. Compare Monte Carlo estimators with full return, reward-to-go, constant baseline, state baseline, and own-sample group centering. Measure bias and variance separately.</li>
+<li><strong>Retrieval with an explicit bottleneck analysis.</strong> Build a small fixed document corpus and questions with known supporting passages. Compare lexical, embedding, and hybrid retrieval; then compare generated answers using retrieved versus oracle evidence. Measure retrieval recall and claim support independently.</li>
+</ol>
+<p>These are proposed experiments, not results claimed by the lectures. Begin with small deterministic cases and preserve a final test set before tuning any method.</p>
+<h2 id="practical-study-procedure">Practical study procedure</h2>
+<p>For each chapter, derive one displayed equation without looking, reproduce one numerical example, and answer the five exercises. Follow a timestamp link when the motivation is unclear. Read the linked primary paper after you can explain which problem the lecture's method solves and under which assumptions. The recording is authoritative for what was taught; primary research is authoritative for the attributed research method; the authored notes make their own derivations and corrections explicit.</p></main><aside class="side"><details class="toc" open><summary>On this page</summary><ul><li><a href="#a-route-through-the-material">A route through the material</a></li><li><a href="#connection-1-conditional-expectations-recur-everywhere">Connection 1: conditional expectations recur everywhere</a></li><li><a href="#connection-2-normalization-creates-probabilities-and-geometry">Connection 2: normalization creates probabilities and geometry</a></li><li><a href="#connection-3-latent-variable-learning-is-alternating-inference-and-fitting">Connection 3: latent-variable learning is alternating inference and fitting</a></li><li><a href="#connection-4-the-objective-does-not-define-the-entire-system">Connection 4: the objective does not define the entire system</a></li><li><a href="#three-original-research-projects">Three original research projects</a></li><li><a href="#practical-study-procedure">Practical study procedure</a></li></ul></details></aside></div><footer class="shell foot">Independent study edition · Prepared 25 September 2026 · Based on caption tracks and primary research · <a href="source-map.html">Coverage and attribution</a> · Offline mathematics: <a href="assets/mathjax-LICENSE">MathJax license</a></footer></body></html>

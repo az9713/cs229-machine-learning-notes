@@ -1,0 +1,223 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; object-src 'none'"><meta name="description" content="Independent transcript-grounded CS229 study notes with mathematical derivations, timestamped recordings, exercises and primary references."><title>Lecture 9 — Clustering, Gaussian mixtures, and the geometry of lower bounds | CS229 study notes</title><link rel="stylesheet" href="assets/notes.css"><script src="assets/math-config.js"></script><script defer src="assets/mathjax-tex-svg.js"></script><script defer src="assets/notes.js"></script></head><body><a class="skip" href="#main">Skip to content</a><header class="top"><div class="shell"><a class="brand" href="index.html">CS229 / STUDY NOTES</a><nav aria-label="Course navigation"><a href="index.html#chapters">Chapters</a><a href="source-map.html">Source map</a><a href="study-guide.html">Study guide</a></nav></div></header><div class="shell layout"><main id="main"><div class="label">CS229 · Spring 2026 · approximately 3,949 words</div><h1 id="lecture-9-clustering-gaussian-mixtures-and-the-geometry-of-lower-bounds">Lecture 9 — Clustering, Gaussian mixtures, and the geometry of lower bounds</h1><section class="source meta" aria-label="Source provenance"><p><b>Recording:</b> <a href="https://www.youtube.com/watch?v=bSmIGBCoffA">Stanford CS229 Machine Learning | Spring 2026 | Lecture 9: K-Means and GMM (non-EM)</a> · 76:30</p><p>English caption track marked non-automatic by YouTube · 2,039 timed segments · Retrieved 25 September 2026.</p><p>Timestamp links locate relevant discussion windows. Definitions and derivations are reconstructed; worked examples and exercises are original unless attributed. Research additions are labeled. Slide images were not comprehensively reviewed. <a href="source-map.html#lecture-09">See the section-level source map.</a></p></section><div class="toolrow"><button id="solutions" type="button">Show solutions</button><button id="print" type="button">Print / save PDF</button><a href="lecture-09.md">Editable Markdown</a></div><nav class="pager" aria-label="Chapter sequence"><a href="lecture-08.html">Previous ·  Backpropagation, computational graphs, and higher-order derivatives</a><a href="lecture-10.html">Next ·  Expectation–maximization and principal component analysis</a></nav>
+<p>The property service has a large archive of sensor measurements but only a small number of labeled inspections. It wants to explore recurring patterns before deciding what to label. Clustering can organize observations, but it cannot supply the missing meaning by itself. A mathematical objective must first say what counts as a coherent group.</p>
+<p>The recording develops hard clustering with k-means, replaces hard assignments with Gaussian-mixture probabilities, and introduces Jensen's inequality as the foundation for expectation–maximization. This chapter follows that sequence. The property examples, numerical iterations, code, and counterexamples are original. Research extensions are linked to primary publications, and model assumptions are kept distinct from claims about physical populations.</p>
+<h2 id="1-a-cluster-is-defined-by-an-objective-and-a-representation-0000">1. A cluster is defined by an objective and a representation <a href="https://www.youtube.com/watch?v=bSmIGBCoffA&amp;t=0s">00:00</a></h2>
+<p>In supervised classification, observed labels define a target distinction. In clustering, the observations $x_1,\ldots,x_n\in\mathbb R^d$ arrive without those labels. We choose an integer $K$, centers $\mu_1,\ldots,\mu_K$, and assignments $c_i\in\{1,\ldots,K\}$.</p>
+<p>For k-means, the objective is the sum of squared Euclidean distances to assigned centers:</p>
+<p>$$\Phi(c,\mu)=\sum_{i=1}^n\|x_i-\mu_{c_i}\|^2.$$</p>
+<p>Equivalently, after optimizing assignments for fixed centers,</p>
+<p>$$\Phi(\mu)=\sum_i\min_{1\le j\le K}\|x_i-\mu_j\|^2.$$</p>
+<p>The word “means” refers to the arithmetic means that minimize squared-distance error within fixed groups. It is not an assertion that every population naturally consists of spherical clusters.</p>
+<p>For the service, take a one-dimensional sensor index with observations $0,1,9,10$. With $K=2$, centers $0.5$ and $9.5$ give total squared error 1. This is a useful compression of the measurements. It does not establish that the two groups correspond to safe and unsafe buildings, nor that there are exactly two physical causes.</p>
+<p>Cluster names are arbitrary. Permuting the center indices and assignment labels leaves the objective unchanged. “Cluster 1” in one run need not correspond to “cluster 1” in another. Comparing runs requires matching centers or comparing partitions in a label-invariant way.</p>
+<h3 id="the-representation-chooses-which-differences-matter">The representation chooses which differences matter</h3>
+<p>Suppose one coordinate is area in square meters and another is a dimensionless moisture score. Raw squared Euclidean distance adds quantities with incompatible units. Numerically large coordinates can dominate. Standardization, a scientifically chosen metric, or a learned embedding changes what proximity means.</p>
+<p>An invertible feature rescaling generally changes k-means assignments. Rotations and translations preserve Euclidean distances, and a common positive scalar multiplies the objective by a constant, but coordinate-specific scaling changes relative distances. Preprocessing is therefore part of the model rather than an innocuous formatting step.</p>
+<p>Even uniform data can be partitioned into $K$ groups. A successful algorithmic run is not evidence that latent categories exist. For exploration, inspect representative points and uncertainty near boundaries, test stability under reasonable perturbations, and compare with independent variables that were not used to manufacture the partition.</p>
+<p>The number of clusters is also a modeling choice. The optimal training objective cannot increase as $K$ increases: the larger model can reuse the smaller model's centers and ignore an extra one. At $K=n$, placing a center at every observation gives zero error. Minimizing this unpenalized training score over $K$ therefore does not identify a meaningful number of groups.</p>
+<h2 id="2-lloyds-algorithm-alternates-two-exact-conditional-minimizations-0800">2. Lloyd's algorithm alternates two exact conditional minimizations <a href="https://www.youtube.com/watch?v=bSmIGBCoffA&amp;t=480s">08:00</a></h2>
+<p>Given current centers, the assignment step chooses</p>
+<p>$$c_i\leftarrow\arg\min_j\|x_i-\mu_j\|^2.$$</p>
+<p>Each observation can be assigned independently because the objective is a sum. Squaring does not alter which nonnegative distance is smallest. It matters in the center-update step because squared distance has the arithmetic mean as its minimizer.</p>
+<p>For a nonempty cluster $C_j=\{i:c_i=j\}$, the center update is</p>
+<p>$$\mu_j\leftarrow\frac1{|C_j|}\sum_{i\in C_j}x_i.$$</p>
+<p>To prove this, let $\bar x_j$ be that mean. For any proposed center $\mu$,</p>
+<p>$$\sum_{i\in C_j}\|x_i-\mu\|^2
+=\sum_{i\in C_j}\|x_i-\bar x_j\|^2
++|C_j|\|\bar x_j-\mu\|^2.$$</p>
+<p>The cross-term vanishes because $\sum_{i\in C_j}(x_i-\bar x_j)=0$. The second term is nonnegative and is zero exactly at $\mu=\bar x_j$. This identity supplies both the update and its monotonicity guarantee.</p>
+<p>Each assignment step cannot increase $\Phi$, and each center update cannot increase it. Under exact arithmetic, consistent tie handling, and a specified empty-cluster policy, the standard finite-assignment argument explains why the procedure stabilizes. Monotonicity alone, for an arbitrary real-valued iterative process, would not prove finite termination. Practical implementations also impose an iteration limit and a numerical stopping tolerance.</p>
+<h3 id="follow-one-complete-run">Follow one complete run</h3>
+<p>Start the observations $0,1,9,10$ at centers 0 and 1. The first point goes to center 0, and the remaining three go to center 1. The initial objective is $0+0+64+81=145$.</p>
+<p>The updated centers are 0 and $20/3$. Holding those assignments fixed, the objective becomes $146/3\approx48.6667$. On the next assignment step, both 0 and 1 join the first center, while 9 and 10 join the second. Updating again yields centers $0.5$ and $9.5$ and objective 1. The next iteration leaves the assignments and centers unchanged.</p>
+<p>The following function performs one assignment-and-update cycle. Inputs are a finite data matrix and a finite, compatible matrix of centers. It returns the chosen labels and new centers without modifying inputs. Ties select the first center. An empty cluster raises an explicit error so the caller must choose a policy rather than silently accepting a division by zero.</p>
+<pre><code class="language-python">import numpy as np
+
+
+def lloyd_step(data, centers):
+    data = np.asarray(data, dtype=float)
+    centers = np.asarray(centers, dtype=float)
+    if data.ndim != 2 or centers.ndim != 2:
+        raise ValueError(&quot;Data and centers must be matrices&quot;)
+    if not len(data) or not len(centers) or not data.shape[1]:
+        raise ValueError(&quot;Data and centers must be nonempty&quot;)
+    if data.shape[1] != centers.shape[1]:
+        raise ValueError(&quot;Feature dimensions must agree&quot;)
+    if not np.isfinite(data).all() or not np.isfinite(centers).all():
+        raise ValueError(&quot;Inputs must be finite&quot;)
+    distance2 = ((data[:, None, :] - centers[None, :, :]) ** 2).sum(2)
+    labels = distance2.argmin(axis=1)
+    if np.any(np.bincount(labels, minlength=len(centers)) == 0):
+        raise ValueError(&quot;Empty cluster: choose a reseeding policy&quot;)
+    updated = np.stack([
+        data[labels == j].mean(axis=0) for j in range(len(centers))
+    ])
+    before = distance2[np.arange(len(data)), labels].sum()
+    after = ((data - updated[labels]) ** 2).sum()
+    assert after &lt;= before + 1e-10
+    return labels, updated
+
+
+data = np.array([[0.0], [1.0], [9.0], [10.0]])
+labels, centers = lloyd_step(data, [[0.0], [1.0]])
+assert np.allclose(centers[:, 0], [0, 20 / 3])
+labels, centers = lloyd_step(data, centers)
+assert np.allclose(centers[:, 0], [0.5, 9.5])
+assert np.isclose(((data - centers[labels]) ** 2).sum(), 1)
+</code></pre>
+<p>This transparent calculation allocates an $n\times K\times d$ temporary difference array. It is appropriate for the tiny teaching case. Large datasets should compute distances in blocks or use an established implementation rather than allocate this tensor.</p>
+<p>An empty cluster has no empirical mean. Retaining its previous center, reseeding it at a poorly represented observation, or reducing $K$ are different policies. Any intervention should be evaluated against the stated objective and recorded as part of the algorithm. The mere fact that the formula contains a mean does not define behavior when the denominator is zero.</p>
+<h2 id="3-initialization-changes-optimization-not-the-meaning-of-the-objective-1600">3. Initialization changes optimization, not the meaning of the objective <a href="https://www.youtube.com/watch?v=bSmIGBCoffA&amp;t=960s">16:00</a></h2>
+<p>Lloyd's algorithm reaches a fixed point of its alternating updates, not necessarily a global optimum. A concrete example uses four rectangle corners:</p>
+<p>$$(-2,-1),\;(-2,1),\;(2,-1),\;(2,1).$$</p>
+<p>With centers $(0,-1)$ and $(0,1)$, assignments separate the bottom and top rows. Recomputing their means changes nothing. Every point has squared distance 4 to its center, so the objective is 16.</p>
+<p>With centers $(-2,0)$ and $(2,0)$, assignments separate left and right columns. This is also a fixed point, but every squared distance is 1, giving objective 4. Monotone improvement cannot leave the first configuration if neither conditional update improves it.</p>
+<p>Random restarts explore different basins. Comparing their final values of the same objective helps select a better optimization result for a fixed representation and $K$. It does not resolve whether that objective answers the intended scientific question.</p>
+<p><a href="https://theory.stanford.edu/~sergei/papers/kMeansPP-soda.pdf">Arthur and Vassilvitskii's k-means++ paper</a> improves the initialization. Choose the first center uniformly from the observations. Then choose each subsequent center with probability proportional to its squared distance $D(x)^2$ from the nearest already chosen center. This preferentially covers regions poorly represented by existing centers.</p>
+<p>For the original squared-distance problem, the paper proves an expected initialization cost bound</p>
+<p>$$\mathbb E[\Phi]\le8(\log K+2)\Phi_{\rm opt}.$$</p>
+<p>The expectation is over the seeding randomness; this is not a deterministic guarantee for every run. Subsequent Lloyd updates cannot worsen that starting cost. The result concerns objective approximation, not recovery of true latent classes.</p>
+<p>The exact global k-means optimization problem is computationally hard in general, but that does not imply every small instance is difficult or that the objective has no minimum. Complexity statements concern families of instances. They should not be used as a substitute for analyzing the specific data and algorithm at hand.</p>
+<p>Choosing $K$ can draw on domain knowledge, stability, compression needs, and downstream utility. An elbow in the objective curve is a diagnostic, not an identified physical law. A probabilistic model adds likelihood-based comparisons, but it introduces additional assumptions rather than making model selection assumption-free.</p>
+<p>For the property service, one useful evaluation is whether clusters reduce the cost of selecting diverse inspections. A partition can be operationally useful even if it does not correspond to a unique set of natural building types. The evaluation criterion should reflect that actual use.</p>
+<h2 id="4-a-gaussian-mixture-specifies-a-generative-story-2900">4. A Gaussian mixture specifies a generative story <a href="https://www.youtube.com/watch?v=bSmIGBCoffA&amp;t=1740s">29:00</a></h2>
+<p>A Gaussian mixture introduces an unobserved component indicator $Z\in\{1,\ldots,K\}$. Let $\pi_j=P(Z=j)$, with $\pi_j\ge0$ and $\sum_j\pi_j=1$. Conditional on $Z=j$, draw</p>
+<p>$$X\mid Z=j\sim\mathcal N(\mu_j,\Sigma_j).$$</p>
+<p>The joint density and marginal density are</p>
+<p>$$p_\theta(x,Z=j)=\pi_j\mathcal N(x;\mu_j,\Sigma_j),\qquad
+p_\theta(x)=\sum_{j=1}^K\pi_j\mathcal N(x;\mu_j,\Sigma_j).$$</p>
+<p>The parameter collection $\theta$ contains weights, means, and covariance matrices. Positive definite covariance matrices define ordinary nonsingular component densities. The latent indicator is unobserved; it is not a label provided by a human inspector.</p>
+<p>The mixing weights are prior probabilities of component membership before seeing $x$, even if estimated from data. This use of “prior” differs from a Bayesian prior distribution over the model parameters themselves. Learning $\pi$ does not stop it from being a prior over $Z$ relative to observing $X$.</p>
+<p>Unlike k-means, a general mixture can represent components with different spreads, orientations, and frequencies. Those extra degrees of freedom can describe overlapping populations more naturally, but they also require more data and create more ways to overfit.</p>
+<p>For independent observations, the observed-data log likelihood is</p>
+<p>$$\ell(\theta)=\sum_{i=1}^n
+\log\left[\sum_{j=1}^K\pi_j
+\mathcal N(x_i;\mu_j,\Sigma_j)\right].$$</p>
+<p>The sum inside the logarithm marginalizes the missing indicator. If the indicators were observed, the complete-data log likelihood would instead separate into component-specific terms, much like labeled Gaussian fitting in Lecture 5. The missing assignments are the new obstacle.</p>
+<h3 id="soft-assignments-are-posterior-probabilities">Soft assignments are posterior probabilities</h3>
+<p>Given a current parameter estimate, the responsibility of component $j$ for observation $i$ is</p>
+<p>$$r_{ij}=P_\theta(Z_i=j\mid X_i=x_i)
+=\frac{\pi_j\mathcal N(x_i;\mu_j,\Sigma_j)}
+{\sum_{k=1}^K\pi_k\mathcal N(x_i;\mu_k,\Sigma_k)}.$$</p>
+<p>For each observation, responsibilities sum to one. Saying “60% in each of two components” would violate this constraint; a two-component uncertainty statement might instead be 60% and 40%.</p>
+<p>Take scalar means 0 and 2, both with variance 1, and mixing weights $0.75$ and $0.25$. At $x=1$, the component densities are equal, so responsibilities are exactly the mixing weights. Geometric equidistance does not imply posterior probability $1/2$ when frequencies differ.</p>
+<p>At $x=2$, the ratio of the second density to the first is $e^2$. The posterior odds for component 2 are $e^2/3$, giving probability $e^2/(3+e^2)\approx0.7112$. The observation favors component 2 enough to overcome its smaller mixing weight, but not enough to make membership certain.</p>
+<p>These probabilities describe membership under the fitted mixture. A poorly specified Gaussian model can produce precise-looking but misleading assignments. In particular, one elongated or curved physical population may be represented by several Gaussian components. Component count and physical-source count need not coincide.</p>
+<h2 id="5-expectation-and-maximization-alternate-inference-and-estimation-5000">5. Expectation and maximization alternate inference and estimation <a href="https://www.youtube.com/watch?v=bSmIGBCoffA&amp;t=3000s">50:00</a></h2>
+<p>The expectation step, or E-step, computes current responsibilities. The maximization step, or M-step, treats those numbers as fixed weights and refits the component parameters. Define the effective component count $N_j=\sum_i r_{ij}$. For a full Gaussian mixture,</p>
+<p>$$\pi_j^{\rm new}=\frac{N_j}{n},\qquad
+\mu_j^{\rm new}=\frac1{N_j}\sum_i r_{ij}x_i,$$</p>
+<p>$$\Sigma_j^{\rm new}
+=\frac1{N_j}\sum_i r_{ij}
+(x_i-\mu_j^{\rm new})(x_i-\mu_j^{\rm new})^\top.$$</p>
+<p>The covariance is centered at the new mean. Its denominator is the effective count, following maximum likelihood, rather than an unbiased-estimation correction. Lecture 10 derives these updates from a common objective; here their weighted-count interpretation connects directly to k-means.</p>
+<p>When responsibilities are exactly zero or one, the mean update becomes the arithmetic mean of assigned points. For common fixed spherical variance $\sigma^2I$ and fixed positive mixing weights, responsibilities concentrate on the unique nearest center as $\sigma^2\downarrow0$. This provides a precise limiting connection to hard assignments. Ties and changing covariance models require separate care.</p>
+<h3 id="one-soft-iteration-by-hand">One soft iteration by hand</h3>
+<p>Use observations $x_1=0,x_2=2$, initial means 0 and 2, equal mixing weights, and unit variances. At $x=0$, responsibility for the first component is</p>
+<p>$$r=\frac1{1+e^{-2}}\approx0.880797.$$</p>
+<p>By symmetry, the responsibility matrix is $\begin{pmatrix}r&amp;1-r\\1-r&amp;r\end{pmatrix}$. Each effective count is 1, so the weights stay equal. The new means are $2(1-r)\approx0.238406$ and $2r\approx1.761594$. Each new variance is $4r(1-r)\approx0.419974$.</p>
+<p>Unlike k-means, each observation influences both means. The uncertain assignment pulls each mean slightly toward the other point. Refitting variances then changes how sharply the next E-step distinguishes the components.</p>
+<p>The implementation below evaluates one-dimensional mixture responsibilities and observed log likelihood in log space. It accepts nonempty finite vectors, strictly positive variances and weights, and weights summing to one. It returns an $n\times K$ responsibility matrix and a scalar log likelihood. There are no external effects.</p>
+<pre><code class="language-python">def mixture_estep(points, means, variances, weights):
+    points, means, variances, weights = [
+        np.asarray(v, dtype=float)
+        for v in (points, means, variances, weights)
+    ]
+    if any(v.ndim != 1 or not v.size for v in
+           (points, means, variances, weights)):
+        raise ValueError(&quot;Expected nonempty vectors&quot;)
+    if means.shape != variances.shape or means.shape != weights.shape:
+        raise ValueError(&quot;Component parameter shapes must match&quot;)
+    if not all(np.isfinite(v).all() for v in
+               (points, means, variances, weights)):
+        raise ValueError(&quot;Inputs must be finite&quot;)
+    if np.any(variances &lt;= 0) or np.any(weights &lt;= 0):
+        raise ValueError(&quot;Variances and weights must be positive&quot;)
+    if not np.isclose(weights.sum(), 1):
+        raise ValueError(&quot;Weights must sum to one&quot;)
+    log_joint = np.log(weights)[None, :] - 0.5 * (
+        np.log(2 * np.pi * variances)[None, :]
+        + (points[:, None] - means[None, :]) ** 2 / variances[None, :]
+    )
+    log_density = np.logaddexp.reduce(log_joint, axis=1)
+    responsibility = np.exp(log_joint - log_density[:, None])
+    return responsibility, float(log_density.sum())
+
+
+points = np.array([0.0, 2.0])
+responsibility, old_ll = mixture_estep(points, [0, 2], [1, 1], [0.5, 0.5])
+counts = responsibility.sum(axis=0)
+means = (responsibility.T @ points) / counts
+variances = (
+    responsibility * (points[:, None] - means[None, :]) ** 2
+).sum(axis=0) / counts
+weights = counts / len(points)
+_, new_ll = mixture_estep(points, means, variances, weights)
+assert np.allclose(responsibility.sum(axis=1), 1)
+assert np.allclose(means, [0.238405844, 1.761594156])
+assert np.allclose(variances, 0.419974342)
+assert new_ll &gt;= old_ll
+</code></pre>
+<p>This is a checked single iteration, not a robust unrestricted mixture fitter. With only two observations, repeatedly estimating two free variances can drive them toward degeneracy. The example is deliberately small enough to audit while exposing a genuine model failure.</p>
+<h3 id="likelihood-can-improve-while-the-model-degenerates">Likelihood can improve while the model degenerates</h3>
+<p>Put one component mean exactly at an observation and let its covariance shrink to zero, while another component maintains nonzero density on the remaining observations. The shrinking component's density at its mean diverges, so the total log likelihood can become arbitrarily large. An unconstrained Gaussian-mixture likelihood need not have a finite maximizer.</p>
+<p>Covariance floors, constrained covariance families, or probabilistic regularization can prevent this behavior, but they change the optimization problem. A component with negligible effective count also requires an explicit policy. Stable log-space arithmetic prevents avoidable underflow; it does not solve statistical degeneracy.</p>
+<p>The historical primary reference for the general alternating method is <a href="https://doi.org/10.1111/j.2517-6161.1977.tb01600.x">Dempster, Laird, and Rubin's EM paper</a>. Its generality will matter more in the next chapter, where the latent variable need not be a cluster indicator.</p>
+<h2 id="6-jensens-inequality-constructs-a-lower-bound-that-can-touch-the-likelihood-6000">6. Jensen's inequality constructs a lower bound that can touch the likelihood <a href="https://www.youtube.com/watch?v=bSmIGBCoffA&amp;t=3600s">60:00</a></h2>
+<p>A set is convex if it contains every line segment joining two of its points. A function $f$ on a convex domain is convex if</p>
+<p>$$f(\lambda a+(1-\lambda)b)
+\le\lambda f(a)+(1-\lambda)f(b),\qquad 0\le\lambda\le1.$$</p>
+<p>The graph lies below its chords. More precisely, the epigraph $\{(x,t):t\ge f(x)\}$ is a convex set; the graph itself generally is not. This distinction makes the geometric picture precise.</p>
+<p>For a twice-differentiable scalar function on an interval, $f&#x27;&#x27;\ge0$ characterizes convexity. A nonnegative first derivative characterizes monotonicity instead. Strong convexity requires a uniform positive curvature lower bound, not merely a pointwise statement that curvature happens to be positive. For example, $e^x$ has positive second derivative everywhere but is not strongly convex on all of $\mathbb R$ because that derivative approaches zero as $x\to-\infty$.</p>
+<p>Jensen's inequality extends the chord inequality to expectations:</p>
+<p>$$f(\mathbb E[X])\le\mathbb E[f(X)]$$</p>
+<p>under the relevant integrability conditions. For a concave function, the direction reverses. The logarithm is concave on positive numbers because its second derivative is $-1/x^2$.</p>
+<p>For values 1 and 9 with equal weights,</p>
+<p>$$\log\left(\frac{1+9}{2}\right)=\log5
+\ge\frac12\log1+\frac12\log9=\log3.$$</p>
+<p>The gap is $\log(5/3)&gt;0$. Replacing a log of an average by an average of logs creates a lower bound, not an equality.</p>
+<h3 id="the-lower-bound-becomes-useful-when-its-gap-can-be-controlled">The lower bound becomes useful when its gap can be controlled</h3>
+<p>For one observation, choose any positive distribution $q(z)$ over latent states covering the support of $p_\theta(x,z)$. Then</p>
+<p>$$\log p_\theta(x)
+=\log\sum_z q(z)\frac{p_\theta(x,z)}{q(z)}
+\ge\sum_zq(z)\log\frac{p_\theta(x,z)}{q(z)}
+\equiv\mathcal L(q,\theta).$$</p>
+<p>The expression $\mathcal L$ is an evidence lower bound, or ELBO. It is the expected complete-data log density plus the entropy of $q$. The support condition prevents the importance-weight rewrite from silently dropping probability mass.</p>
+<p>Because the logarithm is strictly concave, equality holds when $p_\theta(x,z)/q(z)$ is constant over the relevant support. Choosing $q(z)=p_\theta(z\mid x)$ makes that ratio equal to $p_\theta(x)$, so the bound touches the likelihood.</p>
+<p>At iteration $t$, EM chooses the current posterior $q_t$, then improves the bound as a function of $\theta$. If that improvement is exact or at least nondecreasing,</p>
+<p>$$\ell(\theta_{t+1})\ge
+\mathcal L(q_t,\theta_{t+1})\ge
+\mathcal L(q_t,\theta_t)=\ell(\theta_t),$$</p>
+<p>where the multi-observation version sums individual bounds. This is the mathematical content of the recording's touching-curve picture.</p>
+<p>The lower bound need not be globally concave in every latent-variable model or parameterization. EM needs a tractable or improving M-step, not a universal concavity theorem. Monotonic likelihood also does not guarantee a global optimum, finite parameter convergence, or immunity to the mixture singularity above.</p>
+<p>For our property archive, EM alternates a model-based explanation of which component could have generated each measurement with a weighted re-estimation of those components. The procedure is internally coherent. Whether its explanations correspond to useful building populations remains an external validation question.</p>
+<h2 id="exercises">Exercises</h2>
+<ol>
+<li><strong>Derive.</strong> Prove the mean-update identity for a fixed nonempty cluster, and explain why it fails to define an update for an empty cluster.</li>
+<li><strong>Compute.</strong> Verify the two fixed points of Lloyd's algorithm on the rectangle corners and their costs. Explain why a monotonic algorithm can remain at the worse one.</li>
+<li><strong>Compute.</strong> In the two-component mixture with means 0 and 2, unit variances, and weights $0.75,0.25$, find the second component's posterior probability at 1 and 2.</li>
+<li><strong>Counterexample.</strong> Explain why increasing $K$ can improve the training objective without discovering more meaningful categories. Give a separate example in which increasing Gaussian-mixture likelihood reflects a pathology.</li>
+<li><strong>Derive and design.</strong> State the equality condition in the ELBO construction. Then propose a practical diagnostic protocol for fitting a mixture to the property archive.</li>
+</ol>
+<details>
+<summary>Solutions</summary>
+<ol>
+<li>
+<p>Write $x_i-\mu=(x_i-\bar x)+(\bar x-\mu)$ and expand the squared norms. Summing the cross-term gives $2(\bar x-\mu)^\top\sum_i(x_i-\bar x)=0$. The remaining center-dependent term is $|C|\|\bar x-\mu\|^2$, minimized at the mean. For an empty cluster, $|C|=0$ and the objective contributes zero for every center, so there is no data-defined mean or unique minimizer. A policy must be supplied separately.</p>
+</li>
+<li>
+<p>With horizontal centers $(0,-1),(0,1)$, each point chooses its own row because its squared distances are 4 versus 8. The means remain unchanged, and total cost is 16. With vertical centers $(-2,0),(2,0)$, squared distances are 1 versus 17, giving total cost 4 and another fixed point. Moving from the first configuration to the second requires a coordinated change that the two conditional minimizations do not initiate from that fixed point.</p>
+</li>
+<li>
+<p>At 1, equal component densities cancel, giving probability $0.25$. At 2, the density ratio is $e^2$ in favor of component 2. Multiplying by prior odds $1/3$ and converting back gives $e^2/(3+e^2)\approx0.7112$. The result combines geometric compatibility with mixture frequency.</p>
+</li>
+<li>
+<p>For any finite dataset, assigning one center per observation yields zero k-means distortion, even if observations are samples from one continuous unimodal population. More centers can improve quantization without identifying additional physical categories. Separately, a Gaussian component centered on one observation with variance tending to zero creates arbitrarily large density at that point; another component can explain the remaining observations. The likelihood increase then reflects covariance collapse rather than a useful population model.</p>
+</li>
+<li>
+<p>Equality requires a constant ratio $p_\theta(x,z)/q(z)$ over the relevant support, achieved by the exact posterior $q(z)=p_\theta(z\mid x)$. In practice, record initialization, covariance constraints, stopping criteria, and preprocessing; inspect the likelihood trajectory and effective component counts; check covariance eigenvalues for collapse; compare restarts after accounting for label permutations; and evaluate held-out density and downstream inspection usefulness. Use independent metadata to test proposed interpretations. A smooth likelihood trace verifies one aspect of optimization, not the semantic validity of the discovered groups.</p>
+</li>
+</ol>
+</details>
+<h2 id="primary-references-and-evidence-boundaries">Primary references and evidence boundaries</h2>
+<p>The <a href="https://www.youtube.com/watch?v=bSmIGBCoffA">recording</a> provides the progression from clustering to mixtures and Jensen's inequality. <a href="https://theory.stanford.edu/~sergei/papers/kMeansPP-soda.pdf">Arthur and Vassilvitskii</a> support the seeding algorithm and expected approximation guarantee. <a href="https://doi.org/10.1111/j.2517-6161.1977.tb01600.x">Dempster, Laird, and Rubin</a> provide the primary EM reference. The property case, fixed-point example, soft iteration, code, and convexity clarifications are original exposition. The next chapter develops the full variational identity and then connects unsupervised structure to principal component analysis.</p><nav class="pager" aria-label="Chapter sequence"><a href="lecture-08.html">Previous ·  Backpropagation, computational graphs, and higher-order derivatives</a><a href="lecture-10.html">Next ·  Expectation–maximization and principal component analysis</a></nav></main><aside class="side"><details class="toc" open><summary>On this page</summary><ul><li><a href="#1-a-cluster-is-defined-by-an-objective-and-a-representation-0000">1. A cluster is defined by an objective and a representation 00:00</a></li><li><a href="#2-lloyds-algorithm-alternates-two-exact-conditional-minimizations-0800">2. Lloyd&#x27;s algorithm alternates two exact conditional minimizations 08:00</a></li><li><a href="#3-initialization-changes-optimization-not-the-meaning-of-the-objective-1600">3. Initialization changes optimization, not the meaning of the objective 16:00</a></li><li><a href="#4-a-gaussian-mixture-specifies-a-generative-story-2900">4. A Gaussian mixture specifies a generative story 29:00</a></li><li><a href="#5-expectation-and-maximization-alternate-inference-and-estimation-5000">5. Expectation and maximization alternate inference and estimation 50:00</a></li><li><a href="#6-jensens-inequality-constructs-a-lower-bound-that-can-touch-the-likelihood-6000">6. Jensen&#x27;s inequality constructs a lower bound that can touch the likelihood 60:00</a></li><li><a href="#exercises">Exercises</a></li><li><a href="#primary-references-and-evidence-boundaries">Primary references and evidence boundaries</a></li></ul></details></aside></div><footer class="shell foot">Independent study edition · Prepared 25 September 2026 · Based on caption tracks and primary research · <a href="source-map.html">Coverage and attribution</a> · Offline mathematics: <a href="assets/mathjax-LICENSE">MathJax license</a></footer></body></html>

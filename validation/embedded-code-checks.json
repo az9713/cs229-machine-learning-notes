@@ -1,0 +1,229 @@
+{
+  "method": "Sequential execution; fresh namespace per chapter; embedded assertions enabled. Execution does not prove all possible inputs correct.",
+  "blocks": [
+    {
+      "chapter": "lecture-01.md",
+      "block": 1,
+      "sha256": "1e353a71042e6a758164fc11ed83e96410e23a69f0dc7bafbf1c861a3fd88663",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-02.md",
+      "block": 1,
+      "sha256": "6e17001d7b621944959a1a131f5c7e416bcbe65703bd97aea89ce1980d66930d",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-02.md",
+      "block": 2,
+      "sha256": "e057c5c781094210a778f57ac08bba3539b2f8bdca3ae7285b556645f105dac6",
+      "result": "passed",
+      "output": "[1. 2.]"
+    },
+    {
+      "chapter": "lecture-03.md",
+      "block": 1,
+      "sha256": "f145e825590f918c42973783f735645d73b4ae0dc05c3bde3e0eb96752c01162",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-03.md",
+      "block": 2,
+      "sha256": "6a585283b99fb36db37592b685ec735a686a78ba3416d731ca9d034dff49d4c9",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-04.md",
+      "block": 1,
+      "sha256": "dd222fa9eb2bad276e776042714ac7bb9bc7ae992f4c8ba9dc49409908329d4b",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-04.md",
+      "block": 2,
+      "sha256": "1f80bc67e22275fa0f5fcbf50f74f3d28516aeffab9c7c397117d8043ab93560",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-05.md",
+      "block": 1,
+      "sha256": "24592fa0a2f985d00b8735aee6529edd0d0547127e16931df213a4c53fb163ea",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-05.md",
+      "block": 2,
+      "sha256": "f606ed769d9274552bf15dfde05bdf93077f288e110379e3fba406278f946072",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-06.md",
+      "block": 1,
+      "sha256": "aa8a53c7fa1a782c93f4db4c390c12701b4c6f50f708071e4aa4cabdc895917d",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-06.md",
+      "block": 2,
+      "sha256": "ea7ab0f7ccc0ec28fcd72344e969e208b41b2a87e9050c438a8611c825ca9a86",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-07.md",
+      "block": 1,
+      "sha256": "20aa889dbd50f3bbdc894d470b2700c7ce815c9483996c8a8f2555a6b678aef1",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-07.md",
+      "block": 2,
+      "sha256": "aa1ae85bb20d159e3bda5fe329a0b96222c31e44879a5ccc87e2b6624585b9d0",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-08.md",
+      "block": 1,
+      "sha256": "1716aabed7da07706a5475419055854cf46f88edc55b233f9c0bca3356f91d7f",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-09.md",
+      "block": 1,
+      "sha256": "34de0bf153e1e925e327ee30b76a98d173085c2dc78632bb8a783451f5c9642b",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-09.md",
+      "block": 2,
+      "sha256": "6ec6111f984ac7640bad5fdbd32129bd71fd86301f06243a5ebe06717b15536c",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-10.md",
+      "block": 1,
+      "sha256": "569d131aeaf9c085b50b00726f308bad06afe2375565d0ccdfa5376ddd2953ed",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-10.md",
+      "block": 2,
+      "sha256": "a6d1e637703b3d85a58c9a9a8376757e016133314a8cf78ee8abb010ab852531",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-11.md",
+      "block": 1,
+      "sha256": "353a6096721fb2af4c770937948af9e255380a90fb5ebefe0719683474aff39a",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-12.md",
+      "block": 1,
+      "sha256": "834390988626276de6916107a45f3ad5e83cbc77eb5cb8bb030a2536d2ba3187",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-12.md",
+      "block": 2,
+      "sha256": "af85fb7e3e67be894a825dd2c4e9a001b62a27343ff35502c419c52e6448f1ee",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-13.md",
+      "block": 1,
+      "sha256": "52fd6afc83bf69470cdb51e232261be42ac0805f5fab178ecc9ca37672a9d52f",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-13.md",
+      "block": 2,
+      "sha256": "b176faf6173080584a0a901c03b610f0972b4076693b0b3e491e27b447511531",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-14.md",
+      "block": 1,
+      "sha256": "746742bd5e4c65ce215b7b00cd94dc1596622b3c3ac4946c3151badf20bd15f4",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-14.md",
+      "block": 2,
+      "sha256": "17d2653e18517271fa71a99aa55cc4d9d5bb7335f40b42916799fc4a4b6a2c86",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-16.md",
+      "block": 1,
+      "sha256": "63534f1089cca5767f5954d7bea4dca0ec28ec605a3c1da05191d57cb0c0b7e6",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-16.md",
+      "block": 2,
+      "sha256": "fe84d45328363a430faf18c894fc4cc6842d53ab3f2c612b77d88425b46fc97b",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-18.md",
+      "block": 1,
+      "sha256": "24c39a5dbd4bb4aa22d83e461a9e70ec93c8b2b85d565be2b432ca316fc827e5",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-18.md",
+      "block": 2,
+      "sha256": "42b085497dee9d28ddbdcbbaf4ba7076fb8451559cbdd0b16d6b878b92907771",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-20.md",
+      "block": 1,
+      "sha256": "fc8e3de83a4ae1937112a6209bfdcb17f254085d19a0b2f712100f9a3952b320",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-20.md",
+      "block": 2,
+      "sha256": "ca49c158b4ba7956c126c8d2907932d60215825f74c618b4fe182f23dec1ff3d",
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "chapter": "lecture-20.md",
+      "block": 3,
+      "sha256": "9719db936482eece6ca848dff7c90fcaaa81693272639a78de9f9b523ca0771a",
+      "result": "passed",
+      "output": ""
+    }
+  ]
+}

@@ -1,0 +1,257 @@
+# Lecture 2 — Linear regression as prediction, geometry, and computation
+
+A house-price predictor can fit yesterday's sales precisely and still misprice tomorrow's houses. It can also make stable predictions while its individual coefficients vary wildly. Linear regression is a small enough laboratory to separate these failures: representation determines which predictions are possible, the loss determines what counts as error, and the optimizer determines which coefficients computation actually returns.
+
+## 1. A prediction problem becomes a mathematical model [05:54](https://www.youtube.com/watch?v=cmNIMjPYdgM&t=354s)
+
+### The running case and its units
+
+Suppose we want to estimate a sale price before a house is sold. The input contains information available at prediction time: floor area, bedrooms, and perhaps neighborhood. The target is the realized sale price. Including a later appraisal that already incorporates the sale would leak the answer into the inputs. A training algorithm cannot distinguish useful predictive information from information that will be unavailable when the model is deployed.
+
+Let $n$ be the number of observed sales and $d$ the number of numerical features. For sale $i$, the column vector $x_i\in\mathbb R^d$ contains its features and $y_i\in\mathbb R$ its price. Here $\mathbb R$ denotes the real numbers and $i\in\{1,\ldots,n\}$ indexes examples. A **training set** is the collection $D=\{(x_i,y_i)\}_{i=1}^n$ used to choose a predictor. A **hypothesis** is a function mapping inputs to predictions; a **hypothesis class** is the set of such functions allowed by the modeling decision.
+
+For our numerical case, measure area in thousands of square feet and price in hundreds of thousands of dollars. Use three deliberately simplified sales: $(x,y)=(1,3),(2,5),(3,7)$. Their exact linear pattern makes calculations inspectable; it is an original teaching construction, not a claim about the Ames housing data discussed in the recording. A house of area $x=2$ is a 2,000-square-foot house, and $y=5$ means a price of 500,000 dollars.
+
+Choose the affine predictor $h_\theta(x)=\theta_0+\theta_1x$. The coefficient $\theta_0$ is an intercept, measured in price units; $\theta_1$ is a slope, measured in price units per area unit. The word **affine** permits the offset $\theta_0$, whereas a strictly linear map must send zero to zero. The conventional name “linear regression” concerns linearity in the fitted coefficients. Its intercept can therefore be nonzero.
+
+### Features are a modeling decision
+
+For $d$ features, append a constant feature and write $\tilde x_i=(1,x_i^\top)^\top\in\mathbb R^{d+1}$, where $\top$ means transpose. With the parameter vector $\theta=(\theta_0,\ldots,\theta_d)^\top$, the prediction is $h_\theta(x_i)=\theta^\top\tilde x_i$. Stack the row vectors $\tilde x_i^\top$ into the **design matrix** $X\in\mathbb R^{n\times(d+1)}$, and stack the targets into $y\in\mathbb R^n$. The predictions on all training houses are the vector $X\theta$.
+
+Adding bedrooms expands the class: the old area-only model remains available by setting the new coefficient to zero. Consequently, the minimum training loss cannot increase when we add an unrestricted feature and solve the enlarged problem exactly. This nesting argument says nothing about future error. An additional feature can encode accidental correlations that disappear in later sales.
+
+A fixed nonlinear feature, such as area squared, also preserves linearity in the coefficients. The function $h_\theta(x)=\theta_0+\theta_1x+\theta_2x^2$ is curved as a function of area but remains linear in $\theta$. The distinction matters computationally: least-squares geometry survives any fixed feature map. If the same fitted parameters also change the feature map, as in a neural network, that geometry generally changes.
+
+The sale distribution is the statistical object behind the dataset. Let $(X_{\rm new},Y_{\rm new})$ denote a future random house and price, distinct from the fixed design matrix $X$. Good prediction concerns their joint distribution. The usual assumption that training and future examples come from a common population may fail across time, geography, or interest-rate regimes. Neither a large dataset nor exact optimization proves that this assumption holds.
+
+## 2. What squared error asks the model to learn [24:00](https://www.youtube.com/watch?v=cmNIMjPYdgM&t=1440s)
+
+### An objective is a decision rule
+
+Define the residual $r_i=h_\theta(x_i)-y_i$, the signed prediction error for house $i$. A positive residual is an overprediction. The squared-error objective, with an averaging convention used throughout this chapter, is
+
+$$J(\theta)=\frac{1}{2n}\sum_{i=1}^n r_i^2
+=\frac{1}{2n}(X\theta-y)^\top(X\theta-y)
+=\frac{1}{2n}\|X\theta-y\|_2^2.$$
+
+The Euclidean norm satisfies $\|v\|_2^2=\sum_i v_i^2$. The objective has squared-price units. The factor $1/2$ simplifies differentiation, and $1/n$ makes its scale comparable across dataset sizes. Multiplying the whole objective by a positive constant leaves its minimizers unchanged. It does change gradients, so an unchanged numerical learning rate can produce a different optimization trajectory.
+
+**Empirical risk minimization** means choosing a hypothesis that minimizes an average loss on the observed sample. The notation $\operatorname*{argmin}_\theta J(\theta)$ denotes the set of parameter values attaining the smallest objective, not the objective value itself. That set may contain more than one element. A particular learning algorithm must then supply an additional rule for selecting one of them.
+
+Squaring prevents positive and negative errors from cancelling, but it also penalizes large residuals strongly. An error of two price units contributes four times as much as an error of one unit. This is a substantive preference. If a rare luxury-house sale has a very large residual, it can dominate many small errors on ordinary houses. Absolute error would encode a different preference and lead to a different optimization problem.
+
+### Why the conditional mean appears
+
+To understand the population target, fix a house description $x$ and consider predicting a scalar $a$. Assume the conditional second moment of its price is finite, and let $m(x)=\mathbb E[Y_{\rm new}\mid X_{\rm new}=x]$ be the conditional mean. Add and subtract $m(x)$ inside the squared error. The cross term vanishes because the conditional mean of $Y_{\rm new}-m(x)$ is zero:
+
+$$\mathbb E[(Y_{\rm new}-a)^2\mid X_{\rm new}=x]
+=\mathbb E[(Y_{\rm new}-m(x))^2\mid X_{\rm new}=x]
++(m(x)-a)^2.$$
+
+The first term does not depend on $a$; the second is nonnegative and vanishes at $a=m(x)$. Squared error therefore targets the conditional mean even when the noise is not Gaussian. A Gaussian assumption supplies a likelihood interpretation in Lecture 3, but is unnecessary for this minimization identity. Restricting the predictor to an affine class may prevent it from representing the conditional mean exactly.
+
+For example, suppose indistinguishable houses sell at prices 4 and 8 with probabilities $3/4$ and $1/4$. Their conditional mean is 5. Predicting 5 gives expected squared error $3$, while predicting the more common price 4 gives error $4$. Under absolute error the latter prediction is preferable: the median is 4. There is no loss-independent “correct prediction”; the choice depends on which mistakes matter.
+
+The [official CS229 notes, 2022 edition](https://cs229.stanford.edu/notes2022fall/main_notes.pdf) provide a stable reference for the least-squares setup and its later likelihood interpretation. They are supporting mathematical material from an earlier course edition, not evidence for the timing or exact examples of this recording.
+
+### Training improvement and deployment improvement
+
+For the three houses, $\theta=(1,2)$ predicts all prices exactly, so $J=0$. This establishes interpolation of those observations. It does not establish that a six-thousand-square-foot house sells for 1.3 million dollars. Extrapolation extends the assumed affine relationship beyond the observed area range; no algebraic property of least squares creates evidence there.
+
+The appropriate deployment check uses sales excluded from coefficient fitting and selected to resemble the intended future population. If the application predicts future sales, a chronological split may answer the question better than randomly dividing repeated observations of the same properties. The test design and the numerical objective solve different problems. An exact optimizer cannot repair a test set that leaks information from training.
+
+## 3. Gradients explain both the update and its stability [33:00](https://www.youtube.com/watch?v=cmNIMjPYdgM&t=1980s)
+
+### Deriving the direction of change
+
+Let $r=X\theta-y$ be the residual vector and let $u\in\mathbb R^{d+1}$ be a proposed small change to the parameters. Expanding the square gives an exact identity:
+
+$$J(\theta+u)-J(\theta)
+=\frac1n r^\top Xu+\frac1{2n}u^\top X^\top Xu.$$
+
+The term linear in $u$ identifies the **gradient**, the column vector of partial derivatives, as $\nabla J(\theta)=X^\top r/n$. Differentiating again gives the **Hessian**, the matrix of second derivatives, $H=X^\top X/n$. These dimensions are useful debugging checks: $X^\top r$ has $d+1$ entries, the same number as $\theta$.
+
+For any vector $v$, $v^\top Hv=\|Xv\|_2^2/n\ge0$. A matrix satisfying this inequality is **positive semidefinite**. Thus this quadratic objective is convex: moving along a line in parameter space gives a curve whose second derivative is nonnegative. Every stationary point is a global minimizer. The objective is strictly convex only when $X$ has independent columns, because then $Xv\ne0$ for every nonzero $v$.
+
+Gradient descent chooses $u=-\alpha\nabla J(\theta)$, where the positive scalar $\alpha$ is the **learning rate** or **step size**. In indexed form, $\theta_{k+1}=\theta_k-\alpha\nabla J(\theta_k)$, with $k$ counting updates. Every component of the new vector must use the same old vector. Updating the intercept first and then using its new value to calculate the slope is a different algorithm.
+
+### A complete numerical step
+
+For the running case,
+
+$$X=\begin{bmatrix}1&1\\1&2\\1&3\end{bmatrix},\qquad
+y=\begin{bmatrix}3\\5\\7\end{bmatrix}.$$
+
+At $\theta_0=(0,0)^\top$, the residual is $(-3,-5,-7)^\top$, so $\nabla J(\theta_0)=(-5,-34/3)^\top$. With $\alpha=0.1$, the simultaneous update is $\theta_1=(1/2,17/15)^\top$. Its predictions are $(49/30,83/30,117/30)^\top$. The residuals are $(-41/30,-67/30,-93/30)^\top$; therefore the objective falls from $83/6\approx13.8333$ to $14819/5400\approx2.7443$.
+
+The reduction is a direct check of the sign and normalization of the gradient. It is not a general proof that $0.1$ works for arbitrary features. Changing area units changes the Hessian and can make the same step size unstable.
+
+### Curvature determines the safe interval
+
+Let $\theta_*$ be any minimizer and define the error vector $e_k=\theta_k-\theta_*$. Because $X^\top(X\theta_*-y)=0$, the gradient is $He_k$, and the update becomes $e_{k+1}=(I-\alpha H)e_k$, where $I$ is the identity matrix. A real symmetric matrix has orthogonal eigenvectors. Along an eigenvector of $H$ with eigenvalue $\lambda$, each step multiplies the corresponding error coordinate by $1-\alpha\lambda$.
+
+Contraction in every positive-curvature direction requires $|1-\alpha\lambda|\lt1$, hence $0\lt\alpha\lt2/\lambda_{\max}$, where $\lambda_{\max}$ is the largest eigenvalue. At the upper endpoint, one component can oscillate without shrinking. Above it, that component can grow. A zero eigenvalue produces multiplier one: the algorithm cannot change an error component that the observations do not constrain.
+
+Here $H=\begin{bmatrix}1&2\\2&14/3\end{bmatrix}$ has eigenvalues $(17\pm\sqrt{265})/6$, approximately $5.547$ and $0.120$. The safe upper bound is approximately $0.361$. The slow direction explains why a large initial loss reduction does not imply rapid final convergence: with step size $0.1$, its error is multiplied by roughly $0.988$ per step.
+
+Centering area replaces $x$ by $z=x-2$. The same predictor becomes $(\theta_0+2\theta_1)+\theta_1z$. Its design Hessian is diagonal with entries $1$ and $2/3$. The prediction class has not changed, but gradient descent now sees much more similar curvature in its coordinates. Centering and scaling can therefore improve numerical behavior without adding predictive information. The preprocessing constants must be computed on training data and stored for future use.
+
+## 4. Stochastic gradients change the cost of an update [44:00](https://www.youtube.com/watch?v=cmNIMjPYdgM&t=2640s)
+
+### Unbiasedness is conditional on the sampling rule
+
+The full gradient requires reading every training example. Let $g_i(\theta)=(\tilde x_i^\top\theta-y_i)\tilde x_i$ be example $i$'s gradient contribution. Then $\nabla J(\theta)=n^{-1}\sum_i g_i(\theta)$. Draw $b$ independent indices $I_1,\ldots,I_b$ uniformly from $\{1,\ldots,n\}$, allowing repetition, and define the minibatch estimate $\hat g_b=b^{-1}\sum_{j=1}^b g_{I_j}(\theta)$.
+
+For a fixed current $\theta$, each sampled contribution has expectation equal to the full gradient. Linearity of expectation gives $\mathbb E[\hat g_b\mid\theta]=\nabla J(\theta)$. If $\Sigma(\theta)$ denotes the covariance matrix of one contribution, independence gives $\operatorname{Cov}(\hat g_b\mid\theta)=\Sigma(\theta)/b$. Cross-covariance terms vanish because the sampled indices are independent. This is the precise variance benefit of a larger batch under this sampling model.
+
+At the initial vector in our house example, the three gradients are $(-3,-3)$, $(-5,-10)$, and $(-7,-21)$. Their mean is $(-5,-34/3)$ as above. A one-example update can therefore differ sharply from the full update, particularly in the slope coordinate. The noise is a property of the current residuals and features; it need not be isotropic or constant throughout training.
+
+Uniform selection matters. If expensive houses are sampled more frequently, the unweighted mean estimates a different objective. For nonzero selection probabilities $q_i$, a single-example estimator $g_i/(nq_i)$ has the original full gradient as its expectation. The correction follows by multiplying by $q_i$ and summing over $i$. However, small $q_i$ can produce large importance weights and high variance. A formally unbiased estimator is not necessarily a useful low-cost estimator.
+
+### Reshuffling is not independent sampling
+
+An **epoch** is a pass through all training examples. Random reshuffling draws a permutation and visits each example once during the epoch. It guarantees coverage in that pass. Independent sampling with replacement does not: after $n$ draws, a particular example remains unseen with probability $(1-1/n)^n$, close to $e^{-1}$ for large $n$.
+
+Within a reshuffled epoch, the next example is sampled from the remaining examples, while the parameters already depend on earlier examples. Its conditional gradient need not equal the full gradient at the current parameters. Treating it as an independent unbiased draw would silently apply the wrong proof. [Mishchenko, Khaled, and Richtárik](https://arxiv.org/abs/2006.05988) analyze reshuffling and shuffle-once procedures under explicit optimization assumptions, showing why these algorithms deserve their own analysis.
+
+For housing data ordered by sale date or price, blindly taking consecutive minibatches can expose the optimizer to a systematically changing distribution. Reshuffling can reduce that ordering effect when a fixed empirical objective is intended. It does not make historical data representative of future houses. Sampling validity inside the dataset and representativeness of the dataset are two separate assumptions.
+
+### Constant steps leave a noise floor
+
+An instructive local model has scalar curvature $\lambda\gt0$ and update noise $\xi_k$ with mean zero and variance $\sigma_g^2$, independent across steps and of the current error. The error recurrence is $e_{k+1}=(1-\alpha\lambda)e_k-\alpha\xi_k$. If the stable process reaches stationary variance $V$, squaring and taking expectations gives
+
+$$V=(1-\alpha\lambda)^2V+\alpha^2\sigma_g^2,
+\qquad V=\frac{\alpha\sigma_g^2}{2\lambda-\alpha\lambda^2}.$$
+
+This calculation explains the persistent fluctuations of constant-step stochastic optimization in a noisy quadratic model. Reducing the step size or the gradient-noise variance reduces the stationary spread. It assumes additive independent noise; actual least-squares gradient noise depends on the parameters and may vanish at a perfectly interpolating solution. Our exact three-house dataset is such a case, so a nonzero noise floor is not universal.
+
+The [Bottou–Curtis–Nocedal review](https://arxiv.org/abs/1606.04838) relates stochastic optimization to large-scale learning and explains why computational and statistical objectives must be considered together. A minibatch's lower arithmetic cost can permit more updates, but the best batch size also depends on memory, parallelism, and communication. Its value cannot be decided from the $1/b$ covariance law alone.
+
+## 5. Batches, budgets, and an executable experiment [50:00](https://www.youtube.com/watch?v=cmNIMjPYdgM&t=3000s)
+
+### Compare equal resources, not equal iteration counts
+
+Suppose one full-data step costs $n$ example-gradient evaluations and one minibatch step costs $b$. Comparing both after 100 updates gives the full-data method about $n/b$ times as much data-processing work. Conversely, equal numbers of processed examples do not imply equal wall-clock time: accelerators can process a larger matrix more efficiently than many tiny ones. Report examples processed, updates, elapsed time, and held-out error separately.
+
+The [large-minibatch ImageNet study by Goyal and colleagues](https://arxiv.org/abs/1706.02677) demonstrated a specific recipe combining large batches, learning-rate scaling, and warmup. Its evidence concerns that network, dataset, and distributed training setting. It does not prove that increasing batch size always improves generalization or that the same scaling rule can be extrapolated indefinitely. For our convex quadratic, the previously derived curvature bound remains a direct constraint on any proposed full-gradient step.
+
+Stopping has at least three meanings. A small gradient measures approximate stationarity of the training objective. A validation minimum selects an iteration based on unseen development data. An exhausted computation budget ends training for an operational reason. These can occur at different times. If the smallest Hessian eigenvalue is $\mu\gt0$, the identity $\nabla J=He$ gives $\|e\|_2\le\|\nabla J\|_2/\mu$. Without positive curvature, a small gradient cannot establish closeness to a unique coefficient vector.
+
+### Code follows the mathematical contract
+
+The following NumPy code implements one simultaneous full-gradient step. It accepts a finite, nonempty two-dimensional design matrix, a one-dimensional response vector, matching coefficients, and a finite positive step size. It returns a new coefficient vector, changes no files, and does not mutate its inputs. Invalid shapes or nonfinite values raise `ValueError`; numerical overflow raises a floating-point exception instead of silently returning unusable coefficients. The bias column is explicitly supplied by the caller.
+
+```python
+import numpy as np
+
+
+def regression_step(X, y, theta, alpha):
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float)
+    theta = np.asarray(theta, dtype=float)
+    if X.ndim != 2 or min(X.shape) == 0:
+        raise ValueError("X must be a nonempty matrix")
+    if y.shape != (len(X),) or theta.shape != (X.shape[1],):
+        raise ValueError("incompatible response or parameter shape")
+    if not all(np.isfinite(a).all() for a in (X, y, theta)):
+        raise ValueError("data and parameters must be finite")
+    if not np.isscalar(alpha) or not np.isfinite(alpha) or alpha <= 0:
+        raise ValueError("alpha must be finite and positive")
+    with np.errstate(over="raise", invalid="raise"):
+        gradient = X.T @ (X @ theta - y) / len(X)
+        return theta - alpha * gradient
+
+
+X = np.column_stack((np.ones(3), [1.0, 2.0, 3.0]))
+y = np.array([3.0, 5.0, 7.0])
+theta = regression_step(X, y, np.zeros(2), 0.1)
+assert np.allclose(theta, [0.5, 17 / 15])
+assert np.isclose(np.sum((X @ theta - y) ** 2) / 6, 14819 / 5400)
+```
+
+The shape check prevents a particularly misleading bug: subtracting a column-shaped target from a flat prediction can broadcast into an $n\times n$ array. Such code may run while optimizing no intended regression objective. The assertion independently encodes the hand-calculated update and objective, so it detects a reversed residual sign or a missing average.
+
+To use a minibatch, pass selected rows of $X$ and matching elements of $y$ to the same function. A generator with a fixed seed makes the sampling experiment reproducible. Reproducibility establishes that the same experiment can be repeated; it is not a substitute for independent trials when estimating stochastic performance.
+
+```python
+rng = np.random.default_rng(229)
+theta_sgd = np.zeros(2)
+for step in range(2000):
+    rows = rng.integers(0, len(X), size=2)
+    theta_sgd = regression_step(X[rows], y[rows], theta_sgd, 0.05)
+assert np.linalg.norm(X @ theta_sgd - y) < 1e-3
+
+theta_reference = np.linalg.lstsq(X, y, rcond=None)[0]
+assert np.allclose(theta_reference, [1.0, 2.0])
+print(np.round(theta_reference, 6))  # [1. 2.]
+```
+
+Here constant-step SGD converges closely because every example's gradient vanishes at the same exact fit. To study a noise floor, change the middle target from 5 to 5.5; the three examples then disagree at the least-squares optimum. Compare trajectories, rather than expecting every sampled update to reduce the full-data objective. The code is a small mathematical experiment, not a training framework or an uncertainty estimator.
+
+## 6. Normal equations reveal what the observations identify [71:00](https://www.youtube.com/watch?v=cmNIMjPYdgM&t=4260s)
+
+### Orthogonality is the central geometric fact
+
+Setting the gradient to zero gives the **normal equations**, $X^\top X\theta=X^\top y$. The adjective “normal” refers to orthogonality: the fitted residual must be perpendicular to every column of $X$. If a residual had a component along a feature column, changing that coefficient could reduce the objective. At the minimum no such first-order improvement remains.
+
+For our three houses, $X^\top X=\begin{bmatrix}3&6\\6&14\end{bmatrix}$ and $X^\top y=(15,34)^\top$. The first equation gives $\theta_0+2\theta_1=5$. Substituting into the second yields $2\theta_1=4$, so $\theta_1=2$ and $\theta_0=1$. This agrees with both the plotted line and the independent numerical solver.
+
+The **column space** of $X$ is the set $\{Xv:v\in\mathbb R^{d+1}\}$ of all fitted-value vectors the class can represent on the sample. Least squares projects $y$ orthogonally onto this space. The projection is unique even when several coefficient vectors yield it. Thus uniqueness of fitted values and uniqueness of parameters are different questions.
+
+### Rank deficiency and invisible directions
+
+The matrix has **full column rank** if its columns are linearly independent. Only then is $X^\top X$ invertible, giving the formal formula $\theta_*=(X^\top X)^{-1}X^\top y$. Having more examples than coefficients is necessary for full column rank, but not sufficient: duplicating a feature creates dependence regardless of sample size.
+
+Let $\ker X=\{v:Xv=0\}$ be the **null space**. If $\theta_*$ solves the normal equations, then every $\theta_*+v$ with $v\in\ker X$ produces exactly the same training predictions and loss. Conversely, two minimizing coefficient vectors differ by a null-space vector because they share the unique projected fitted values. The full solution set is $X^+y+\ker X$, where $X^+$ is the Moore–Penrose pseudoinverse; $X^+y$ selects the solution with smallest Euclidean coefficient norm.
+
+Suppose the training data include area in both thousands of square feet and a second column exactly twice that value. Then $v=(0,2,-1)^\top$ is invisible: $Xv=0$. Coefficients can move arbitrarily far along this direction without affecting any training prediction. At a new input whose two measurements violate their former relationship, the predictions can differ. A data-processing inconsistency can therefore expose an ambiguity that a perfect training fit concealed.
+
+### Why the inverse formula is not the numerical recipe
+
+The **singular values** of a full-column-rank matrix are the positive square roots of the eigenvalues of $X^\top X$. Its spectral condition number is $\kappa_2(X)=\sigma_{\max}/\sigma_{\min}$. Since the eigenvalues of $X^\top X$ are the squared singular values, $\kappa_2(X^\top X)=\kappa_2(X)^2$. Forming the normal-equation matrix can magnify the numerical difficulty caused by nearly dependent features.
+
+A QR factorization writes $X=QR$ with orthonormal columns of $Q$ and triangular $R$; solving $R\theta=Q^\top y$ avoids explicitly forming the inverse. A singular-value decomposition, $X=U\Sigma V^\top$, also reveals numerical rank and gives a principled pseudoinverse. NumPy's [documented least-squares interface](https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html) returns a minimum-norm solution when the minimizer is nonunique and exposes singular values and rank for diagnosis.
+
+For the house predictor, inspect coefficients, predictions, and singular values together. Very different coefficients with similar in-range predictions suggest weakly identified directions. Such a result may still be useful for interpolation, but it cannot support confident claims about the separate causal influence of two correlated features.
+
+## Research extension: optimization itself selects a predictor
+
+The normal equations describe all optimal fits; an iterative algorithm also determines which one is reached. Starting gradient descent at zero keeps every iterate in the row space of $X$, because every update is a linear combination of the columns of $X^\top$. The row space is perpendicular to $\ker X$. If the stable iteration converges, its limit is therefore the unique minimum-norm solution. A nonzero initial null-space component survives forever. Initialization is irrelevant to optimal fitted values here, but it can matter to the selected coefficients.
+
+Stopping early adds another selection effect. In a singular direction with singular value $\sigma_j\gt0$, zero-initialized gradient descent multiplies the fully fitted solution component by $1-(1-\alpha\sigma_j^2/n)^k$ after $k$ steps. To derive this, solve the scalar recurrence $a_{k+1}=(1-\alpha\sigma_j^2/n)a_k+\alpha\sigma_j u_j^\top y/n$ as a geometric series. Small singular-value directions are learned slowly, so early stopping suppresses the very directions in which fitting can amplify label noise.
+
+This is a **spectral filter**: the algorithm treats directions differently according to their singular values. Ridge regression, developed in Lecture 6, uses a different filter, $\sigma_j^2/(\sigma_j^2+n\lambda)$ under an averaged-loss penalty convention with parameter $\lambda\gt0$. Early stopping and ridge can behave similarly without being identical coordinate by coordinate. [Ali, Kolter, and Tibshirani](https://proceedings.mlr.press/v89/ali19a.html) study their relationship through continuous-time gradient flow. The finite-step derivation above is an independent teaching calculation, not a claim that all optimizers implement ridge regression.
+
+## Limitations, exercises, and worked solutions
+
+The derivations establish properties of a fixed least-squares objective with finite numerical features. They do not prove distributional representativeness, causal effects, robustness to arbitrary outliers, or the adequacy of an affine conditional mean. Convexity guarantees global optimality of stationary points, not uniqueness without rank, rapid convergence without conditioning, or low future risk without statistical assumptions. Those distinctions should remain visible when the same optimization vocabulary is applied to neural networks.
+
+1. **Derive.** For $J(\theta)=\theta^2$, determine all positive constant step sizes for convergence from every starting point. What happens at the boundary?
+2. **Check an assumption.** Change the area unit from thousands of square feet to square feet. How must the slope change to preserve predictions, and why is reusing the learning rate hazardous?
+3. **Construct a counterexample.** Give two minimizing coefficient vectors for a design with columns $(1,x,2x)$ that disagree on a new feature vector $(1,2,5)$.
+4. **Compute.** At the initial vector of the running case, calculate the covariance matrix of a one-example gradient drawn uniformly. What is the covariance for two independent draws averaged together?
+5. **Design.** Compare full-gradient descent and SGD for predicting next year's house prices under a fixed training-time budget. Specify the split, preprocessing, measured outcomes, and stopping rule. Explain how to avoid choosing a winner by test-set tuning.
+
+<details><summary>Solutions</summary>
+
+1. The derivative is $2\theta$, so one step gives $\theta_{k+1}=(1-2\alpha)\theta_k$. After $k$ steps the coefficient is $(1-2\alpha)^k\theta_0$. It tends to zero for every start exactly when $|1-2\alpha|\lt1$, namely $0\lt\alpha\lt1$. At $\alpha=1$, a nonzero start alternates sign without shrinking. Above one it grows in magnitude. At zero it never moves. This derivation depends on the objective's normalization: for $J=\theta^2/2$, the safe upper endpoint would be two.
+
+2. If $x'=1000x$, then $\theta_0+\theta_1x=\theta_0+(\theta_1/1000)x'$. The new slope must be $\theta_1/1000$, while the intercept is unchanged. The design's area column becomes 1,000 times larger; its squared contribution to the Hessian becomes a million times larger. The largest Hessian eigenvalue can therefore increase dramatically, shrinking the stable-step interval. Rescaling coefficients to describe the same function does not make Euclidean gradient descent invariant to the new coordinates. Standardizing features is one practical remedy, using training-only statistics.
+
+3. Choose $\theta=(1,2,0)$ and $\theta'=(1,4,-1)$. Their difference is $(0,2,-1)$, whose inner product with every training row $(1,x,2x)$ is zero. Both reproduce the running case prices exactly. On $(1,2,5)$, the first predicts $1+4=5$ while the second predicts $1+8-5=4$. The test feature combination breaks the training identity. If it were known to be physically impossible, this particular disagreement would be irrelevant; a claim about deployment must specify the feasible inputs.
+
+4. Subtracting the mean $(-5,-34/3)$ from the three gradients gives deviations $(2,25/3)$, $(0,4/3)$, and $(-2,-29/3)$. Average their outer products. The intercept variance is $(4+0+4)/3=8/3$, the covariance is $(50/3+0+58/3)/3=12$, and the slope variance is $(625+16+841)/27=494/9$. Thus $\Sigma=\begin{bmatrix}8/3&12\\12&494/9\end{bmatrix}$. Averaging two independent draws divides this matrix by two. Sampling two distinct examples without replacement would have a different covariance; the independence calculation cannot simply be reused.
+
+5. Reserve the latest complete period as an untouched test set and use earlier chronological blocks for fitting and validation. Fit imputation and scaling on the fitting block only, then apply the stored transformations elsewhere. Tune step sizes, batch sizes, and stopping decisions using validation performance under the same wall-time budget. Record processed examples, updates, elapsed time, validation error, and coefficient/prediction stability across random seeds. Lock the selected procedure before evaluating the test period. Include a direct least-squares solution as a numerical reference when feasible, but do not assume its lower training objective guarantees lower future error. Report test error separately from computation and avoid iteratively selecting configurations based on the test result.
+
+</details>
+
+## Primary sources
+
+- [Lecture recording](https://www.youtube.com/watch?v=cmNIMjPYdgM): supervised-learning setup, squared loss, gradient methods, batching, and normal equations; timestamps follow this recording.
+- [Official CS229 notes, earlier 2022 edition](https://cs229.stanford.edu/notes2022fall/main_notes.pdf): stable mathematical reference, not the 2026 transcript.
+- [Bottou, Curtis, and Nocedal, Optimization Methods for Large-Scale Machine Learning](https://arxiv.org/abs/1606.04838): optimization and statistical-computation trade-offs.
+- [Mishchenko, Khaled, and Richtárik, Random Reshuffling](https://arxiv.org/abs/2006.05988): analysis distinct from independent SGD sampling.
+- [Goyal et al., Accurate, Large Minibatch SGD](https://arxiv.org/abs/1706.02677): a specific empirical scaling and warmup result.
+- [Ali, Kolter, and Tibshirani, A Continuous-Time View of Early Stopping](https://proceedings.mlr.press/v89/ali19a.html): comparison between gradient flow and ridge regularization.
+- [NumPy least-squares documentation](https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html): numerical solver contract and rank outputs.

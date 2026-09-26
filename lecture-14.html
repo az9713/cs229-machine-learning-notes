@@ -1,0 +1,158 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; object-src 'none'"><meta name="description" content="Independent transcript-grounded CS229 study notes with mathematical derivations, timestamped recordings, exercises and primary references."><title>Lecture 14 — Autoregressive language models and the mechanics of attention | CS229 study notes</title><link rel="stylesheet" href="assets/notes.css"><script src="assets/math-config.js"></script><script defer src="assets/mathjax-tex-svg.js"></script><script defer src="assets/notes.js"></script></head><body><a class="skip" href="#main">Skip to content</a><header class="top"><div class="shell"><a class="brand" href="index.html">CS229 / STUDY NOTES</a><nav aria-label="Course navigation"><a href="index.html#chapters">Chapters</a><a href="source-map.html">Source map</a><a href="study-guide.html">Study guide</a></nav></div></header><div class="shell layout"><main id="main"><div class="label">CS229 · Spring 2026 · approximately 3,355 words</div><h1 id="lecture-14-autoregressive-language-models-and-the-mechanics-of-attention">Lecture 14 — Autoregressive language models and the mechanics of attention</h1><section class="source meta" aria-label="Source provenance"><p><b>Recording:</b> <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI">Stanford CS229 Machine Learning | Spring 2026 | Lecture 14: Transformers, In-Context Learning</a> · 77:32</p><p>English caption track marked non-automatic by YouTube · 1,460 timed segments · Retrieved 25 September 2026.</p><p>Timestamp links locate relevant discussion windows. Definitions and derivations are reconstructed; worked examples and exercises are original unless attributed. Research additions are labeled. Slide images were not comprehensively reviewed. <a href="source-map.html#lecture-14">See the section-level source map.</a></p></section><div class="toolrow"><button id="solutions" type="button">Show solutions</button><button id="print" type="button">Print / save PDF</button><a href="lecture-14.md">Editable Markdown</a></div><nav class="pager" aria-label="Chapter sequence"><a href="lecture-13.html">Previous ·  Contrastive representations, semantic search, and grounded generation</a><a href="lecture-16.html">Next ·  Efficient transformers and the difference between prompting and training</a></nav>
+<p>The inspection assistant has retrieved the right report. It must now produce an answer token by token, preserve a negation such as “no structural movement,” and relate a measurement to the correct building. What probability model generates this sequence, and what computation allows a token to use the relevant earlier passage?</p>
+<p>We build one model from the outside inward: text becomes token IDs; token IDs select embedding vectors; a causal transformer produces logits; softmax defines conditional probabilities; their product defines a sequence distribution. This is the transcript's substantive order. The worked archive examples, formal derivations, and code are original teaching constructions. Research extensions clarify tokenization and exact memory-efficient attention using primary sources. Visual slides were not reviewed.</p>
+<h2 id="1-tokenization-chooses-the-units-of-the-model-0148">1. Tokenization chooses the units of the model <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=108s">01:48</a></h2>
+<p>Let $\mathcal V$ be a finite vocabulary of size $V$. A tokenizer maps a text string into a sequence $x_1,\ldots,x_T$, where each $x_t$ is an integer identifying a vocabulary item. A token can be a word, a word fragment, punctuation, whitespace-bearing text, or another unit defined by the tokenizer. Its numeric ID is a category label: token 400 is not twice the meaning of token 200.</p>
+<p>Character-level units keep the vocabulary small but make sequences long. Whole-word units make common words compact but need a strategy for rare or unseen words. Subword methods compromise by reusing frequent pieces. The exact segmentation depends on the tokenizer and its version; a pedagogical split of “internationalization” is not a claim about every deployed model.</p>
+<p><a href="https://aclanthology.org/P16-1162/">Sennrich, Haddow, and Birch</a> introduced a widely used application of byte-pair encoding to subword translation. A simplified training procedure starts with small symbols and repeatedly merges the most frequent adjacent pair in a corpus. The learned merge order becomes part of tokenization. Byte-based and character-based variants differ in their base alphabet and handling of text.</p>
+<p>For a miniature corpus with “low” appearing twice and “lower” once, the adjacent pairs “l o” and “o w” each occur three times if words begin as character sequences. A tie rule can first merge “l o” into “lo”; the pair “lo w” then occurs three times and can become “low.” The rare word can share “low” with the common one. Real tokenizers add boundary conventions and other details, so this is an algorithmic illustration rather than a compatible tokenizer implementation.</p>
+<h3 id="tokenization-changes-both-statistics-and-cost">Tokenization changes both statistics and cost</h3>
+<p>If a report uses twice as many tokens under another tokenizer, it consumes twice as many sequence positions. Dense attention's pairwise computation may then grow by roughly four, with width fixed. Conversely, expanding a vocabulary increases input and output table sizes. A vocabulary of $250{,}000$ items needs at least $\lceil\log_2 250{,}000\rceil=18$ bits to distinguish IDs in an ideal fixed-length code; implementation storage can use wider integer types.</p>
+<p>Per-token likelihood and perplexity depend on these units. Comparing perplexities across unrelated tokenizers without accounting for segmentation is misleading. For the archive, preserve tokenizer identity with the checkpoint and compute context budgets on actual tokenized text rather than word counts.</p>
+<h2 id="2-the-chain-rule-turns-a-sequence-into-conditional-decisions-1054">2. The chain rule turns a sequence into conditional decisions <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=654s">10:54</a></h2>
+<p>For fixed length $T$, a categorical table over every sequence would have $V^T$ possible entries. The probability chain rule states</p>
+<p>$$p_\theta(x_{1:T})=\prod_{t=1}^T p_\theta(x_t\mid x_{&lt;t}),$$</p>
+<p>where $x_{1:T}$ denotes the whole sequence and $x_{&lt;t}$ its prefix before position $t$. This identity is exact and requires no Markov approximation. Efficiency comes from parameterizing all conditional distributions with shared model parameters $\theta$, rather than storing a table for every possible prefix.</p>
+<p>Variable-length generation also needs a stopping convention, commonly an end-of-sequence token or a maximum length. A model that never terminates is not automatically a normalized distribution over finite text strings merely because every local softmax sums to one.</p>
+<p>Let $E\in\mathbb R^{V\times d}$ be the learned embedding table, with model width $d$. Token $x_t$ selects row $E_{x_t,:}$. This lookup initially depends only on the token ID. Contextual hidden states later depend on the prefix. Equal token IDs share an initial vector, while the same word in two contexts can acquire different hidden states.</p>
+<p>Introduce a beginning token $x_0$. A causal network maps the prefix $x_0,\ldots,x_{t-1}$ to logits $z_t\in\mathbb R^V$. Define</p>
+<p>$$p_\theta(x_t=j\mid x_{&lt;t})
+=\frac{\exp(z_{t,j})}{\sum_{k=1}^V\exp(z_{t,k})}.$$</p>
+<p>The logit vector is not itself a probability distribution. Softmax converts it into positive entries summing to one, and selecting entry $x_t$ gives the probability assigned to the observed token.</p>
+<p>Suppose a three-token report fragment receives conditional probabilities $0.5,0.25,0.1$. Its probability is $0.0125$, its negative log-likelihood is $-\log0.0125\approx4.3820$ nats, and its average loss is approximately $1.4607$ nats per token. A nat uses the natural logarithm. The corresponding perplexity is $\exp(1.4607)\approx4.3089$, the inverse geometric mean of the assigned probabilities.</p>
+<p>No individual conditional probability establishes factual truth. A plausible continuation can still attach a correct measurement to the wrong building. The language objective models observed text, while the assistant's operational objective concerns supported answers.</p>
+<h2 id="3-sampling-and-likelihood-use-the-same-probabilities-differently-2624">3. Sampling and likelihood use the same probabilities differently <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=1584s">26:24</a></h2>
+<p>Generation starts with a prefix, samples the next token, appends it, and repeats. Likelihood evaluation starts with a complete observed sequence and asks how probable each actual token was given its actual prefix. These are different computations over the same conditional model.</p>
+<p>At positive temperature $\tau$, decoding uses</p>
+<p>$$p_\tau(j)=\frac{\exp(z_j/\tau)}{\sum_k\exp(z_k/\tau)}.$$</p>
+<p>For two tokens, the probability ratio is $\exp[(z_i-z_j)/\tau]$. Smaller $\tau$ magnifies logit differences without changing their order. For logits $(2,1,-1)$ and $\tau=1$, probabilities are approximately $(0.7054,0.2595,0.0351)$. At $\tau=0.01$, the first token receives probability extremely close to one.</p>
+<p>The limit $\tau\to0^+$ concentrates on maximizing logits; if several are tied, the mathematical limit splits mass among them. “Temperature zero” in an implementation usually requests a greedy selection rule rather than literal division by zero. Reproducibility can still depend on ties and numerical execution.</p>
+<p>Top-$k$ sampling keeps the $k$ largest probabilities and renormalizes them. It changes the distribution by assigning zero probability outside the retained set. This can be useful for generation, but the resulting text is not sampled from the original temperature-one model.</p>
+<h3 id="greedy-token-choices-need-not-maximize-sequence-probability">Greedy token choices need not maximize sequence probability</h3>
+<p>Suppose the first token has probabilities $P(A)=0.6$ and $P(B)=0.4$. After $A$, the most probable second token has conditional probability $0.5$; after $B$, a second token has conditional probability $0.99$. Greedy decoding chooses the $A$ branch and obtains a sequence of probability $0.3$. The best $B$ sequence has probability $0.396$. Local maximization does not generally solve the global sequence optimization problem.</p>
+<p>Training minimizes</p>
+<p>$$L(\theta)=-\sum_{t=1}^T\log p_\theta(x_t\mid x_{&lt;t}).$$</p>
+<p>This is a sum over every selected target position, not merely the final token. In teacher forcing, each target sees the observed prefix during training. For input positions containing $(x_0,x_1,\ldots,x_{T-1})$, targets are $(x_1,x_2,\ldots,x_T)$. The one-position shift is essential: allowing a position to read its target turns prediction into copying.</p>
+<p>The following numerical check computes stable token losses from finite logits and integer target IDs. It returns a loss per position, rejects incompatible inputs, and has no external effects. It does not implement the transformer producing the logits.</p>
+<pre><code class="language-python">import numpy as np
+
+
+def token_losses(logits, targets):
+    logits, targets = np.asarray(logits, float), np.asarray(targets)
+    if logits.ndim != 2 or not all(logits.shape):
+        raise ValueError(&quot;Use a nonempty positions-by-vocabulary matrix&quot;)
+    if targets.shape != (len(logits),) or targets.dtype.kind not in &quot;iu&quot;:
+        raise ValueError(&quot;One integer target is required per position&quot;)
+    if not np.isfinite(logits).all():
+        raise ValueError(&quot;Logits must be finite&quot;)
+    if np.any(targets &lt; 0) or np.any(targets &gt;= logits.shape[1]):
+        raise ValueError(&quot;Target outside vocabulary&quot;)
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    return np.log(np.exp(shifted).sum(axis=1)) - shifted[
+        np.arange(len(logits)), targets
+    ]
+
+
+probabilities = np.array([[0.5, 0.5], [0.75, 0.25], [0.9, 0.1]])
+losses = token_losses(np.log(probabilities), np.array([0, 1, 1]))
+assert np.isclose(losses.sum(), -np.log(0.0125))
+assert np.isclose(np.exp(losses.mean()), 80 ** (1 / 3))
+assert np.isclose(token_losses([[1000, -1000]], np.array([1]))[0], 2000)
+</code></pre>
+<h2 id="4-attention-makes-information-flow-depend-on-content-3927">4. Attention makes information flow depend on content <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=2367s">39:27</a></h2>
+<p>A transformer alternates attention with a positionwise feedforward network, also called a multilayer perceptron or MLP. The MLP shares weights across positions but acts on each position separately. Attention moves information between positions. Removing all cross-position operations leaves a model unable to relate a measurement to an earlier building name.</p>
+<p>For one attention head, collect hidden row vectors in $H\in\mathbb R^{T\times d}$. Learned projections produce</p>
+<p>$$Q=HW_Q,\quad K=HW_K,\quad V_{\rm val}=HW_V,$$</p>
+<p>where $W_Q,W_K\in\mathbb R^{d\times d_k}$ and $W_V\in\mathbb R^{d\times d_v}$. The subscript on $V_{\rm val}$ distinguishes the value matrix from vocabulary size $V$. Queries and keys have dimension $d_k$ so their inner products are defined; values can have another dimension $d_v$.</p>
+<p>The unmasked attention operation is</p>
+<p>$$A=\operatorname{softmax}_{\rm row}(QK^\top/\sqrt{d_k}),
+\qquad O=AV_{\rm val}.$$</p>
+<p>Rowwise softmax means that each row is normalized separately. At position $i$,
+$O_i=\sum_j A_{ij}v_j$, a convex combination of value vectors. Queries ask which information to use, keys determine compatibility, and values carry the combined content. These are computational roles, not externally supplied annotations.</p>
+<h3 id="why-scale-the-dot-product">Why scale the dot product?</h3>
+<p>Under the illustrative assumption that query and key coordinates are independent, zero-mean, unit-variance random variables, $q^\top k$ has variance $d_k$. Dividing by $\sqrt{d_k}$ makes the variance one. Without this scaling, large dimensions can produce large logit differences and saturated softmax probabilities. The assumption motivates the factor; learned coordinates need not remain independent.</p>
+<p>For a scalar query $q=1$, keys $(0,\log3)$, and scalar values $(2,8)$, the attention probabilities are $(1/4,3/4)$ and output is $6.5$. Changing values changes the content of the output; changing keys changes which content is selected. This separation explains why replacing all three projections with one fixed average restricts the model.</p>
+<p><a href="https://arxiv.org/abs/1706.03762">Vaswani et al.</a> supplies the primary transformer formulation. The original architecture is an encoder-decoder model, not identical to every modern decoder-only language model. Positional information is also necessary to represent order robustly: unmasked self-attention without positional signals is permutation-equivariant. A causal mask introduces ordering constraints, but positional encodings or related mechanisms give an explicit representation of locations and distances.</p>
+<h2 id="5-a-causal-mask-makes-the-probability-model-implementable-6018">5. A causal mask makes the probability model implementable <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=3618s">60:18</a></h2>
+<p>Unmasked attention lets each position read later inputs. That violates the prefix-only conditional distribution. Define an additive mask $M\in\mathbb R^{T\times T}$ by $M_{ij}=0$ for $j\le i$ and $M_{ij}=-\infty$ for $j&gt;i$. Then</p>
+<p>$$A=\operatorname{softmax}_{\rm row}(QK^\top/\sqrt{d_k}+M).$$</p>
+<p>Masked entries become zero after exponentiation, and permitted entries renormalize to sum to one. The diagonal is allowed because the hidden state at input position $i$ predicts the next token, rather than the token already occupying position $i$.</p>
+<p>Why does this remain causal through many layers? At the first layer, input state $i$ contains only its input token and positional information. Assume every state at layer $\ell$ and position $j$ depends only on input positions up to $j$. Masked attention at position $i$ reads only $j\le i$, so its output depends only on positions up to $i$. Positionwise MLPs, normalization over features, and residual addition preserve that property. Induction proves causality for the stack.</p>
+<p>This proof also identifies a failure condition: an operation that normalizes using statistics across future sequence positions could introduce leakage despite the attention mask. Layer normalization across a position's feature coordinates does not do so.</p>
+<p>The following single-head implementation accepts finite compatible matrices and returns outputs and attention weights. It constructs dense scores for clarity, with quadratic storage; it is not a production kernel. Every causal row has at least its diagonal available, preventing an all-masked softmax.</p>
+<pre><code class="language-python">def causal_attention(queries, keys, values):
+    queries, keys, values = map(
+        lambda x: np.asarray(x, float), (queries, keys, values)
+    )
+    if queries.ndim != 2 or keys.shape != queries.shape:
+        raise ValueError(&quot;Queries and keys must have equal matrix shapes&quot;)
+    if not all(queries.shape) or values.ndim != 2:
+        raise ValueError(&quot;Use nonempty matrices&quot;)
+    if values.shape[0] != len(queries) or not values.shape[1]:
+        raise ValueError(&quot;One nonempty value vector per position is required&quot;)
+    if not all(np.isfinite(a).all() for a in (queries, keys, values)):
+        raise ValueError(&quot;Inputs must be finite&quot;)
+    scores = queries @ keys.T / np.sqrt(queries.shape[1])
+    future = np.triu(np.ones(scores.shape, dtype=bool), k=1)
+    scores[future] = -np.inf
+    weights = np.exp(scores - scores.max(axis=1, keepdims=True))
+    weights /= weights.sum(axis=1, keepdims=True)
+    return weights @ values, weights
+
+
+q = np.ones((3, 1))
+k = np.zeros((3, 1))
+v = np.array([[2.0], [4.0], [9.0]])
+output, attention = causal_attention(q, k, v)
+assert np.allclose(output[:, 0], [2, 3, 5])
+assert np.allclose(attention.sum(axis=1), 1)
+assert np.allclose(np.triu(attention, 1), 0)
+changed, _ = causal_attention(q, [[0], [0], [20]], [[2], [4], [-100]])
+assert np.allclose(changed[:2], output[:2])
+</code></pre>
+<p>The final assertion is a behavioral test of causality: changing a future key and value cannot alter earlier outputs. Checking only matrix shapes would not detect that bug.</p>
+<h2 id="6-multiple-heads-and-residual-blocks-compose-the-computation-6613">6. Multiple heads and residual blocks compose the computation <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=3973s">66:13</a></h2>
+<p>With $h$ heads, compute $O^{(1)},\ldots,O^{(h)}$ from the same input using different projection matrices, concatenate their feature columns, and apply an output projection:</p>
+<p>$$\operatorname{MHA}(H)=
+\operatorname{Concat}(O^{(1)},\ldots,O^{(h)})W_O.$$</p>
+<p>If each value dimension is $d_v$, then $W_O\in\mathbb R^{hd_v\times d}$. The heads operate in parallel, not as successive layers. Their distinct parameters permit distinct routing patterns, but a particular head is not guaranteed to have a clean human-interpretable specialty.</p>
+<p>For the common choice $d_k=d_v=d/h$, the three input projections and one output projection contain approximately $4d^2$ weights, ignoring biases. Increasing the number of heads at fixed model width does not multiply this count by $h$; it changes how the width is partitioned. At $d=4,h=2$, each head has width two and the attention projection count is $64$.</p>
+<p>A representative pre-normalized block is</p>
+<p>$$\tilde H=H+\operatorname{MHA}(\operatorname{Norm}(H)),\qquad
+H&#x27;=\tilde H+\operatorname{MLP}(\operatorname{Norm}(\tilde H)).$$</p>
+<p>Normalization acts independently on each row's features. Other architectures place normalization differently. Residual addition retains a direct path from the input while learned branches modify it, connecting this architecture to Lecture 7's Jacobian analysis. Attention outputs before projection are convex combinations, but output projections, residuals, and nonlinear MLPs mean the complete block is not restricted to a convex hull of input vectors.</p>
+<h2 id="7-exact-attention-can-use-less-memory-without-fewer-pairs-7340">7. Exact attention can use less memory without fewer pairs <a href="https://www.youtube.com/watch?v=pwQ0l4hFCVI&amp;t=4420s">73:40</a></h2>
+<p>For dense attention, forming all query-key products costs $O(T^2d_k)$ per head; combining values costs $O(T^2d_v)$. Materializing the attention matrix uses $O(T^2)$ numbers. At $T=32{,}768$, one matrix has $1{,}073{,}741{,}824$ entries, occupying 2 GiB at two bytes per entry, before other tensors and heads.</p>
+<p><a href="https://arxiv.org/abs/2205.14135">Dao et al.'s FlashAttention</a> changes the execution schedule to reduce transfers between GPU memory levels and avoid storing the full score matrix. Its dense version computes exact attention up to floating-point effects; it does not turn dense attention's arithmetic into linear complexity.</p>
+<p>The central algebra can be understood for one query. Given scores $s_j$ and values $v_j$, maintain a running maximum $m$, denominator $l=\sum_j e^{s_j-m}$, and numerator $a=\sum_j e^{s_j-m}v_j$. If a new block has corresponding statistics $(m_b,l_b,a_b)$, set $m&#x27;=\max(m,m_b)$ and update</p>
+<p>$$l&#x27;=e^{m-m&#x27;}l+e^{m_b-m&#x27;}l_b,\qquad
+a&#x27;=e^{m-m&#x27;}a+e^{m_b-m&#x27;}a_b.$$</p>
+<p>The output is $a&#x27;/l&#x27;$. Multiplying old and new sums by their rescaling factors expresses both in the same exponential reference frame. Thus no full row of probabilities need remain in memory.</p>
+<p>For scores $(0,\log3)$ and values $(2,8)$, the first singleton block has $(m,l,a)=(0,1,2)$ and the second $(\log3,1,8)$. The combined denominator is $1/3+1=4/3$, numerator is $2/3+8=26/3$, and output is $6.5$, matching ordinary attention. GPU tiling, backward recomputation, and memory layout turn this identity into an efficient kernel.</p>
+<h2 id="limitations-and-practical-interpretation">Limitations and practical interpretation</h2>
+<p>Autoregression specifies a probability factorization; attention specifies one architecture for its conditionals. Tokenization, context length, hidden width, number of heads, and implementation schedule affect different costs. A long context does not guarantee that relevant evidence will influence an answer. The inspection assistant still needs tests for negation, entity binding, and citation support.</p>
+<p>Training can process many observed positions in parallel because all prefix tokens are supplied and future dependencies are masked. Generation must ordinarily wait for each newly sampled token. Lecture 16 develops caching and architectural choices that address this asymmetry.</p>
+<h2 id="exercises">Exercises</h2>
+<ol>
+<li>Compute the negative log-likelihood and perplexity for conditional target probabilities $1/2,1/4,1/10$. Explain why they are tokenizer-dependent.</li>
+<li>Give a two-step example where greedy decoding misses the most probable sequence. What happens to equal maximal logits as temperature tends to zero?</li>
+<li>Derive the variance of $q^\top k$ under independent zero-mean, unit-variance coordinates. State an assumption that learned representations may violate.</li>
+<li>In the causal attention example, change the last value from $9$ to $90$ while keeping all scores zero. Find all outputs and explain the unchanged prefix.</li>
+<li>Combine blocks with $(m,l,a)=(0,2,6)$ and $(\log2,1,10)$ using the online softmax equations. Explain why this reduces storage without eliminating pairwise score computation.</li>
+</ol>
+<details>
+<summary>Fully worked solutions</summary>
+<ol>
+<li>Sequence probability is $1/80$, negative log-likelihood is $\log80\approx4.382027$, and perplexity is $80^{1/3}\approx4.308869$. Average loss divides by three tokens. Another tokenizer changes both the sequence of prediction events and their count, so raw per-token perplexities need not be comparable.</li>
+<li>Use $P(A)=0.6$, $P(B)=0.4$, with best second-token probabilities $0.5$ after $A$ and $0.99$ after $B$. Greedy yields $0.3$ while the $B$ sequence reaches $0.396$. If $r$ logits tie for the maximum, their exponentials remain equal and dominate all others, giving limiting probability $1/r$ each. An implementation may apply a separate deterministic tie rule.</li>
+<li>Write $q^\top k=\sum_{j=1}^{d_k}q_jk_j$. Each product has mean zero and variance $\mathbb E[q_j^2]\mathbb E[k_j^2]=1$, and distinct products have zero covariance under the stated independence. The total variance is $d_k$, reduced to one after division by $\sqrt{d_k}$. Learned keys and queries can be correlated and anisotropic, so this is a scaling motivation rather than a maintained distributional theorem.</li>
+<li>Zero scores give uniform weights over each permitted prefix. Outputs are $2$, $(2+4)/2=3$, and $(2+4+90)/3=32$. The first two rows cannot attend to position three. Causality restricts dependencies; it does not make the final output insensitive to its own value.</li>
+<li>The new maximum is $\log2$. Rescale the old block by $1/2$: denominator becomes $(1/2)2+1=2$, numerator becomes $(1/2)6+10=13$, and output is $6.5$. Only accumulated statistics and a current block need storage. Every required score still has to be computed in dense exact attention, so the pair count remains quadratic across all queries.</li>
+</ol>
+</details>
+<h2 id="primary-sources">Primary sources</h2>
+<ul>
+<li>Sennrich, Haddow, and Birch, <a href="https://aclanthology.org/P16-1162/">Neural Machine Translation of Rare Words with Subword Units</a>.</li>
+<li>Vaswani et al., <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>.</li>
+<li>Dao et al., <a href="https://arxiv.org/abs/2205.14135">FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</a>.</li>
+</ul><nav class="pager" aria-label="Chapter sequence"><a href="lecture-13.html">Previous ·  Contrastive representations, semantic search, and grounded generation</a><a href="lecture-16.html">Next ·  Efficient transformers and the difference between prompting and training</a></nav></main><aside class="side"><details class="toc" open><summary>On this page</summary><ul><li><a href="#1-tokenization-chooses-the-units-of-the-model-0148">1. Tokenization chooses the units of the model 01:48</a></li><li><a href="#2-the-chain-rule-turns-a-sequence-into-conditional-decisions-1054">2. The chain rule turns a sequence into conditional decisions 10:54</a></li><li><a href="#3-sampling-and-likelihood-use-the-same-probabilities-differently-2624">3. Sampling and likelihood use the same probabilities differently 26:24</a></li><li><a href="#4-attention-makes-information-flow-depend-on-content-3927">4. Attention makes information flow depend on content 39:27</a></li><li><a href="#5-a-causal-mask-makes-the-probability-model-implementable-6018">5. A causal mask makes the probability model implementable 60:18</a></li><li><a href="#6-multiple-heads-and-residual-blocks-compose-the-computation-6613">6. Multiple heads and residual blocks compose the computation 66:13</a></li><li><a href="#7-exact-attention-can-use-less-memory-without-fewer-pairs-7340">7. Exact attention can use less memory without fewer pairs 73:40</a></li><li><a href="#limitations-and-practical-interpretation">Limitations and practical interpretation</a></li><li><a href="#exercises">Exercises</a></li><li><a href="#primary-sources">Primary sources</a></li></ul></details></aside></div><footer class="shell foot">Independent study edition · Prepared 25 September 2026 · Based on caption tracks and primary research · <a href="source-map.html">Coverage and attribution</a> · Offline mathematics: <a href="assets/mathjax-LICENSE">MathJax license</a></footer></body></html>

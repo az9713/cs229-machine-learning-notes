@@ -1,0 +1,1224 @@
+[
+  {
+    "url": "https://arxiv.org/abs/2005.14165",
+    "checked_at": "2026-09-26T01:42:18.366641+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2005.14165",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Language Models are Few-Shot Learners",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-01.md",
+        "label": "Brown and colleagues' GPT-3 study"
+      },
+      {
+        "file": "lecture-01.md",
+        "label": "Brown et al., Language Models are Few-Shot Learners"
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "Brown et al.'s GPT-3 paper"
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "Language Models are Few-Shot Learners"
+      }
+    ]
+  },
+  {
+    "url": "https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html",
+    "checked_at": "2026-09-26T01:42:20.181414+00:00",
+    "http_status": 200,
+    "final_url": "https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html",
+    "content_type": "text/html; charset=utf-8",
+    "title": "ImageNet Classification with Deep Convolutional Neural Networks",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-01.md",
+        "label": "AlexNet paper"
+      },
+      {
+        "file": "lecture-01.md",
+        "label": "Krizhevsky, Sutskever, and Hinton, ImageNet Classification"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1301.3781",
+    "checked_at": "2026-09-26T01:42:16.657056+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1301.3781",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Efficient Estimation of Word Representations in Vector Space",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-01.md",
+        "label": "Mikolov and colleagues"
+      },
+      {
+        "file": "lecture-01.md",
+        "label": "Mikolov et al., Efficient Estimation of Word Representations"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2203.14465",
+    "checked_at": "2026-09-26T01:42:19.064368+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2203.14465",
+    "content_type": "text/html; charset=utf-8",
+    "title": "STaR: Bootstrapping Reasoning With Reasoning",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-01.md",
+        "label": "STaR, by Zelikman and colleagues"
+      },
+      {
+        "file": "lecture-01.md",
+        "label": "Zelikman et al., STaR"
+      }
+    ]
+  },
+  {
+    "url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf",
+    "checked_at": "2026-09-26T01:42:19.529500+00:00",
+    "http_status": 200,
+    "final_url": "https://cs229.stanford.edu/notes2022fall/main_notes.pdf",
+    "content_type": "application/pdf",
+    "title": "PDF document; title checked against primary publication listing",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-02.md",
+        "label": "official CS229 notes, 2022 edition"
+      },
+      {
+        "file": "lecture-02.md",
+        "label": "Official CS229 notes, earlier 2022 edition"
+      },
+      {
+        "file": "lecture-03.md",
+        "label": "Official CS229 notes, 2022 edition"
+      },
+      {
+        "file": "lecture-05.md",
+        "label": "official CS229 notes"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2006.05988",
+    "checked_at": "2026-09-26T01:42:18.486591+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2006.05988",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Random Reshuffling: Simple Analysis with Vast Improvements",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-02.md",
+        "label": "Mishchenko, Khaled, and Richt\u00e1rik"
+      },
+      {
+        "file": "lecture-02.md",
+        "label": "Mishchenko, Khaled, and Richt\u00e1rik, Random Reshuffling"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1606.04838",
+    "checked_at": "2026-09-26T01:42:17.337321+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1606.04838",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Optimization Methods for Large-Scale Machine Learning",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-02.md",
+        "label": "Bottou\u2013Curtis\u2013Nocedal review"
+      },
+      {
+        "file": "lecture-02.md",
+        "label": "Bottou, Curtis, and Nocedal, Optimization Methods for Large-Scale Machine Learning"
+      },
+      {
+        "file": "lecture-03.md",
+        "label": "Bottou\u2013Curtis\u2013Nocedal review"
+      },
+      {
+        "file": "lecture-03.md",
+        "label": "Bottou, Curtis, and Nocedal, Optimization Methods for Large-Scale Machine Learning"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1706.02677",
+    "checked_at": "2026-09-26T01:42:17.563469+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1706.02677",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-02.md",
+        "label": "large-minibatch ImageNet study by Goyal and colleagues"
+      },
+      {
+        "file": "lecture-02.md",
+        "label": "Goyal et al., Accurate, Large Minibatch SGD"
+      }
+    ]
+  },
+  {
+    "url": "https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html",
+    "checked_at": "2026-09-26T01:42:20.021725+00:00",
+    "http_status": 200,
+    "final_url": "https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html",
+    "content_type": "text/html; charset=utf-8",
+    "title": "numpy.linalg.lstsq \u2014 NumPy v2.5 Manual",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-02.md",
+        "label": "documented least-squares interface"
+      },
+      {
+        "file": "lecture-02.md",
+        "label": "NumPy least-squares documentation"
+      }
+    ]
+  },
+  {
+    "url": "https://proceedings.mlr.press/v89/ali19a.html",
+    "checked_at": "2026-09-26T01:42:20.678450+00:00",
+    "http_status": 200,
+    "final_url": "https://proceedings.mlr.press/v89/ali19a.html",
+    "content_type": "text/html; charset=utf-8",
+    "title": "A Continuous-Time View of Early Stopping for Least Squares Regression",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-02.md",
+        "label": "Ali, Kolter, and Tibshirani"
+      },
+      {
+        "file": "lecture-02.md",
+        "label": "Ali, Kolter, and Tibshirani, A Continuous-Time View of Early Stopping"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1710.10345",
+    "checked_at": "2026-09-26T01:42:17.807726+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1710.10345",
+    "content_type": "text/html; charset=utf-8",
+    "title": "The Implicit Bias of Gradient Descent on Separable Data",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-03.md",
+        "label": "Soudry and colleagues"
+      },
+      {
+        "file": "lecture-03.md",
+        "label": "Soudry et al., The Implicit Bias of Gradient Descent on Separable Data"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1706.04599",
+    "checked_at": "2026-09-26T01:42:17.729516+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1706.04599",
+    "content_type": "text/html; charset=utf-8",
+    "title": "On Calibration of Modern Neural Networks",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-03.md",
+        "label": "Guo and colleagues"
+      },
+      {
+        "file": "lecture-03.md",
+        "label": "Guo et al., On Calibration of Modern Neural Networks"
+      }
+    ]
+  },
+  {
+    "url": "https://people.eecs.berkeley.edu/~jordan/sail/readings/wainwright-jordan-fnt.pdf",
+    "checked_at": "2026-09-26T01:42:20.245634+00:00",
+    "http_status": 200,
+    "final_url": "https://people.eecs.berkeley.edu/~jordan/sail/readings/wainwright-jordan-fnt.pdf",
+    "content_type": "application/pdf",
+    "title": "PDF document; title checked against primary publication listing",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-04.md",
+        "label": "Wainwright and Jordan's treatment of exponential families"
+      },
+      {
+        "file": "lecture-04.md",
+        "label": "Wainwright and Jordan, Graphical Models, Exponential Families, and Variational Inference"
+      },
+      {
+        "file": "lecture-05.md",
+        "label": "Wainwright and Jordan's monograph"
+      },
+      {
+        "file": "lecture-05.md",
+        "label": "Wainwright and Jordan"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1906.02629",
+    "checked_at": "2026-09-26T01:42:18.099596+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1906.02629",
+    "content_type": "text/html; charset=utf-8",
+    "title": "When Does Label Smoothing Help?",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-04.md",
+        "label": "M\u00fcller, Kornblith, and Hinton"
+      },
+      {
+        "file": "lecture-04.md",
+        "label": "M\u00fcller, Kornblith, and Hinton, When Does Label Smoothing Help?"
+      }
+    ]
+  },
+  {
+    "url": "https://journals.aps.org/pr/abstract/10.1103/PhysRev.106.620",
+    "checked_at": "2026-09-26T01:42:19.774703+00:00",
+    "http_status": 403,
+    "final_url": "https://journals.aps.org/pr/abstract/10.1103/PhysRev.106.620",
+    "content_type": "text/html; charset=UTF-8",
+    "title": "Just a moment...",
+    "status": "http_error",
+    "used_in": [
+      {
+        "file": "lecture-04.md",
+        "label": "Jaynes's original information-theoretic treatment"
+      },
+      {
+        "file": "lecture-04.md",
+        "label": "Jaynes, Information Theory and Statistical Mechanics"
+      }
+    ],
+    "verification_note": "Publisher blocks automated HTTP retrieval; DOI and publication identity were separately checked through web search against the publisher listing."
+  },
+  {
+    "url": "https://proceedings.neurips.cc/paper/2001/hash/7b7a53e239400a13bd6be6c91c4f6c4e-Abstract.html",
+    "checked_at": "2026-09-26T01:42:20.691303+00:00",
+    "http_status": 200,
+    "final_url": "https://proceedings.neurips.cc/paper/2001/hash/7b7a53e239400a13bd6be6c91c4f6c4e-Abstract.html",
+    "content_type": "text/html; charset=utf-8",
+    "title": "On Discriminative vs. Generative Classifiers: A comparison of logistic regression and naive Bayes",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-05.md",
+        "label": "Ng and Jordan's comparison of generative and discriminative classifiers"
+      },
+      {
+        "file": "lecture-05.md",
+        "label": "Ng and Jordan (2001)"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1307.1493",
+    "checked_at": "2026-09-26T01:42:16.657259+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1307.1493",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Dropout Training as Adaptive Regularization",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-06.md",
+        "label": "Wager, Wang, and Liang"
+      },
+      {
+        "file": "lecture-06.md",
+        "label": "Wager et al. on dropout"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1711.05101",
+    "checked_at": "2026-09-26T01:42:17.810809+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1711.05101",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Decoupled Weight Decay Regularization",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-06.md",
+        "label": "Loshchilov and Hutter"
+      },
+      {
+        "file": "lecture-06.md",
+        "label": "Loshchilov and Hutter on decoupled weight decay"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1812.11118",
+    "checked_at": "2026-09-26T01:42:18.050015+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1812.11118",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Reconciling modern machine learning practice and the bias-variance trade-off",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-06.md",
+        "label": "Belkin and colleagues"
+      },
+      {
+        "file": "lecture-06.md",
+        "label": "Belkin et al. on double descent"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1902.10811",
+    "checked_at": "2026-09-26T01:42:18.061398+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1902.10811",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Do ImageNet Classifiers Generalize to ImageNet?",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-06.md",
+        "label": "Recht and colleagues' ImageNet replication study"
+      },
+      {
+        "file": "lecture-06.md",
+        "label": "Recht et al. on ImageNet replication"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1603.06560",
+    "checked_at": "2026-09-26T01:42:17.136167+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1603.06560",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Hyperband: A Novel Bandit-Based Approach to Hyperparameter Optimization",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-06.md",
+        "label": "Hyperband"
+      },
+      {
+        "file": "lecture-06.md",
+        "label": "Li et al. on Hyperband"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1606.08415",
+    "checked_at": "2026-09-26T01:42:17.348944+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1606.08415",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Gaussian Error Linear Units (GELUs)",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-07.md",
+        "label": "Hendrycks and Gimpel"
+      },
+      {
+        "file": "lecture-07.md",
+        "label": "GELU"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1512.03385",
+    "checked_at": "2026-09-26T01:42:17.095403+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1512.03385",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Deep Residual Learning for Image Recognition",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-07.md",
+        "label": "He et al.'s residual-network paper"
+      },
+      {
+        "file": "lecture-07.md",
+        "label": "ResNet"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1607.06450",
+    "checked_at": "2026-09-26T01:42:17.506768+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1607.06450",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Layer Normalization",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-07.md",
+        "label": "Ba, Kiros, and Hinton"
+      },
+      {
+        "file": "lecture-07.md",
+        "label": "Layer Normalization"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1910.07467",
+    "checked_at": "2026-09-26T01:42:18.163566+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1910.07467",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Root Mean Square Layer Normalization",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-07.md",
+        "label": "Zhang and Sennrich"
+      },
+      {
+        "file": "lecture-07.md",
+        "label": "RMSNorm"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1502.05767",
+    "checked_at": "2026-09-26T01:42:17.080913+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1502.05767",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Automatic differentiation in machine learning: a survey",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-08.md",
+        "label": "Baydin and colleagues' AD survey"
+      },
+      {
+        "file": "lecture-08.md",
+        "label": "Baydin et al. on AD"
+      }
+    ]
+  },
+  {
+    "url": "https://www.bcl.hamilton.ie/~barak/papers/nc-hessian.pdf",
+    "checked_at": "2026-09-26T01:42:21.321146+00:00",
+    "http_status": 200,
+    "final_url": "https://www.bcl.hamilton.ie/~barak/papers/nc-hessian.pdf",
+    "content_type": "application/pdf",
+    "title": "PDF document; title checked against primary publication listing",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-08.md",
+        "label": "Pearlmutter's original Hessian-product paper"
+      },
+      {
+        "file": "lecture-08.md",
+        "label": "Pearlmutter on Hessian products"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1703.03400",
+    "checked_at": "2026-09-26T01:42:17.554655+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1703.03400",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-08.md",
+        "label": "Finn, Abbeel, and Levine's MAML paper"
+      },
+      {
+        "file": "lecture-08.md",
+        "label": "Finn et al. on MAML"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1604.06174",
+    "checked_at": "2026-09-26T01:42:17.308365+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1604.06174",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Training Deep Nets with Sublinear Memory Cost",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-08.md",
+        "label": "Chen and colleagues' checkpointing paper"
+      },
+      {
+        "file": "lecture-08.md",
+        "label": "Chen et al. on checkpointing"
+      }
+    ]
+  },
+  {
+    "url": "https://theory.stanford.edu/~sergei/papers/kMeansPP-soda.pdf",
+    "checked_at": "2026-09-26T01:42:20.806622+00:00",
+    "http_status": 200,
+    "final_url": "https://theory.stanford.edu/~sergei/papers/kMeansPP-soda.pdf",
+    "content_type": "application/pdf",
+    "title": "PDF document; title checked against primary publication listing",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-09.md",
+        "label": "Arthur and Vassilvitskii's k-means++ paper"
+      },
+      {
+        "file": "lecture-09.md",
+        "label": "Arthur and Vassilvitskii"
+      }
+    ]
+  },
+  {
+    "url": "https://doi.org/10.1111/j.2517-6161.1977.tb01600.x",
+    "checked_at": "2026-09-26T01:42:19.695550+00:00",
+    "http_status": 403,
+    "final_url": "https://academic.oup.com/jrsssb/article/39/1/1/7027539",
+    "content_type": "text/html; charset=UTF-8",
+    "title": "Just a moment...",
+    "status": "http_error",
+    "used_in": [
+      {
+        "file": "lecture-09.md",
+        "label": "Dempster, Laird, and Rubin's EM paper"
+      },
+      {
+        "file": "lecture-09.md",
+        "label": "Dempster, Laird, and Rubin"
+      },
+      {
+        "file": "lecture-10.md",
+        "label": "Dempster\u2013Laird\u2013Rubin paper"
+      },
+      {
+        "file": "lecture-10.md",
+        "label": "Dempster, Laird, and Rubin"
+      }
+    ],
+    "verification_note": "Publisher blocks automated HTTP retrieval; DOI and publication identity were separately checked through web search against the publisher listing."
+  },
+  {
+    "url": "https://www.microsoft.com/en-us/research/publication/probabilistic-principal-component-analysis/",
+    "checked_at": "2026-09-26T01:42:21.782765+00:00",
+    "http_status": 200,
+    "final_url": "https://www.microsoft.com/en-us/research/publication/probabilistic-principal-component-analysis/",
+    "content_type": "text/html; charset=UTF-8",
+    "title": "Probabilistic Principal Component Analysis",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-10.md",
+        "label": "Tipping and Bishop"
+      },
+      {
+        "file": "lecture-10.md",
+        "label": "Tipping and Bishop's probabilistic PCA"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/0909.4061",
+    "checked_at": "2026-09-26T01:42:16.656726+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/0909.4061",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-10.md",
+        "label": "Halko, Martinsson, and Tropp"
+      },
+      {
+        "file": "lecture-10.md",
+        "label": "Halko, Martinsson, and Tropp's randomized decomposition work"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2006.11239",
+    "checked_at": "2026-09-26T01:42:18.497116+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2006.11239",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Denoising Diffusion Probabilistic Models",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-11.md",
+        "label": "Ho, Jain, and Abbeel's DDPM paper"
+      },
+      {
+        "file": "lecture-11.md",
+        "label": "Ho et al., DDPM"
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "Ho, Jain, and Abbeel's DDPM paper"
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "DDPM"
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "Denoising Diffusion Probabilistic Models"
+      }
+    ]
+  },
+  {
+    "url": "https://www.sciencedirect.com/science/article/pii/0304414982900515",
+    "checked_at": "2026-09-26T01:42:21.783930+00:00",
+    "http_status": 403,
+    "final_url": "https://www.sciencedirect.com/science/article/pii/0304414982900515",
+    "content_type": "text/html; charset=UTF-8",
+    "title": "ScienceDirect",
+    "status": "http_error",
+    "used_in": [
+      {
+        "file": "lecture-11.md",
+        "label": "Anderson's 1982 reverse-time diffusion paper"
+      },
+      {
+        "file": "lecture-11.md",
+        "label": "Anderson's reverse-time diffusion theory"
+      }
+    ],
+    "verification_note": "Publisher blocks automated HTTP retrieval; DOI and publication identity were separately checked through web search against the publisher listing."
+  },
+  {
+    "url": "https://arxiv.org/abs/2011.13456",
+    "checked_at": "2026-09-26T01:42:18.524065+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2011.13456",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Score-Based Generative Modeling through Stochastic Differential Equations",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-11.md",
+        "label": "Song and colleagues"
+      },
+      {
+        "file": "lecture-11.md",
+        "label": "Song et al., score-based SDE modeling"
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "Song et al."
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "Score-Based Generative Modeling through Stochastic Differential Equations"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2108.07258",
+    "checked_at": "2026-09-26T01:42:18.760220+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2108.07258",
+    "content_type": "text/html; charset=utf-8",
+    "title": "On the Opportunities and Risks of Foundation Models",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-12.md",
+        "label": "foundation-model report"
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "On the Opportunities and Risks of Foundation Models"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2202.10054",
+    "checked_at": "2026-09-26T01:42:19.017495+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2202.10054",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-12.md",
+        "label": "Kumar et al."
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "Fine-Tuning can Distort Pretrained Features and Underperform Out-of-Distribution"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2106.09685",
+    "checked_at": "2026-09-26T01:42:18.748083+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2106.09685",
+    "content_type": "text/html; charset=utf-8",
+    "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-12.md",
+        "label": "Hu et al.'s LoRA paper"
+      },
+      {
+        "file": "lecture-12.md",
+        "label": "LoRA: Low-Rank Adaptation of Large Language Models"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2002.05709",
+    "checked_at": "2026-09-26T01:42:18.297089+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2002.05709",
+    "content_type": "text/html; charset=utf-8",
+    "title": "A Simple Framework for Contrastive Learning of Visual Representations",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-13.md",
+        "label": "Chen et al.'s SimCLR study"
+      },
+      {
+        "file": "lecture-13.md",
+        "label": "SimCLR method"
+      },
+      {
+        "file": "lecture-13.md",
+        "label": "A Simple Framework for Contrastive Learning of Visual Representations"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1807.03748",
+    "checked_at": "2026-09-26T01:42:17.945959+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1807.03748",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Representation Learning with Contrastive Predictive Coding",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-13.md",
+        "label": "Contrastive Predictive Coding"
+      },
+      {
+        "file": "lecture-13.md",
+        "label": "Representation Learning with Contrastive Predictive Coding"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2103.00020",
+    "checked_at": "2026-09-26T01:42:18.732605+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2103.00020",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Learning Transferable Visual Models From Natural Language Supervision",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-13.md",
+        "label": "Radford et al.'s CLIP paper"
+      },
+      {
+        "file": "lecture-13.md",
+        "label": "Learning Transferable Visual Models From Natural Language Supervision"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1603.09320",
+    "checked_at": "2026-09-26T01:42:17.284726+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1603.09320",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-13.md",
+        "label": "Malkov and Yashunin's HNSW paper"
+      },
+      {
+        "file": "lecture-13.md",
+        "label": "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2005.11401",
+    "checked_at": "2026-09-26T01:42:18.305260+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2005.11401",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-13.md",
+        "label": "Lewis et al. RAG paper"
+      },
+      {
+        "file": "lecture-13.md",
+        "label": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+      }
+    ]
+  },
+  {
+    "url": "https://aclanthology.org/P16-1162/",
+    "checked_at": "2026-09-26T01:42:16.656273+00:00",
+    "http_status": 200,
+    "final_url": "https://aclanthology.org/P16-1162/",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Neural Machine Translation of Rare Words with Subword Units",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-14.md",
+        "label": "Sennrich, Haddow, and Birch"
+      },
+      {
+        "file": "lecture-14.md",
+        "label": "Neural Machine Translation of Rare Words with Subword Units"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1706.03762",
+    "checked_at": "2026-09-26T01:42:17.566058+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1706.03762",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Attention Is All You Need",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-14.md",
+        "label": "Vaswani et al."
+      },
+      {
+        "file": "lecture-14.md",
+        "label": "Attention Is All You Need"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2205.14135",
+    "checked_at": "2026-09-26T01:42:19.201121+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2205.14135",
+    "content_type": "text/html; charset=utf-8",
+    "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-14.md",
+        "label": "Dao et al.'s FlashAttention"
+      },
+      {
+        "file": "lecture-14.md",
+        "label": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1911.02150",
+    "checked_at": "2026-09-26T01:42:18.281827+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1911.02150",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Fast Transformer Decoding: One Write-Head is All You Need",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-16.md",
+        "label": "Shazeer"
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "Fast Transformer Decoding: One Write-Head is All You Need"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2305.13245",
+    "checked_at": "2026-09-26T01:42:19.255762+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2305.13245",
+    "content_type": "text/html; charset=utf-8",
+    "title": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-16.md",
+        "label": "Ainslie et al."
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2310.06825",
+    "checked_at": "2026-09-26T01:42:19.287323+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2310.06825",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Mistral 7B",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-16.md",
+        "label": "Mistral 7B"
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "Mistral 7B"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2101.03961",
+    "checked_at": "2026-09-26T01:42:18.576692+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2101.03961",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-16.md",
+        "label": "Fedus, Zoph, and Shazeer's Switch Transformer"
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "Switch Transformers"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2109.01652",
+    "checked_at": "2026-09-26T01:42:18.787930+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2109.01652",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Finetuned Language Models Are Zero-Shot Learners",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-16.md",
+        "label": "Wei et al.'s FLAN paper"
+      },
+      {
+        "file": "lecture-16.md",
+        "label": "Finetuned Language Models Are Zero-Shot Learners"
+      }
+    ]
+  },
+  {
+    "url": "https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf",
+    "checked_at": "2026-09-26T01:42:20.390613+00:00",
+    "http_status": 200,
+    "final_url": "https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf",
+    "content_type": "application/pdf",
+    "title": "PDF document; title checked against primary publication listing",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-18.md",
+        "label": "Ng, Harada, and Russell"
+      },
+      {
+        "file": "lecture-18.md",
+        "label": "Policy invariance under reward transformations: Theory and application to reward shaping"
+      }
+    ]
+  },
+  {
+    "url": "https://doi.org/10.1007/BF00992696",
+    "checked_at": "2026-09-26T01:42:19.555937+00:00",
+    "http_status": 200,
+    "final_url": "https://link.springer.com/article/10.1007/BF00992696",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Simple statistical gradient-following algorithms for connectionist reinforcement learning",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-18.md",
+        "label": "Williams's REINFORCE algorithms"
+      },
+      {
+        "file": "lecture-18.md",
+        "label": "Simple statistical gradient-following algorithms for connectionist reinforcement learning"
+      }
+    ]
+  },
+  {
+    "url": "https://www.andrew.cmu.edu/course/10-703/textbook/BartoSutton.pdf",
+    "checked_at": "2026-09-26T01:42:21.081107+00:00",
+    "http_status": 200,
+    "final_url": "https://www.andrew.cmu.edu/course/10-703/textbook/BartoSutton.pdf",
+    "content_type": "application/pdf",
+    "title": "PDF document; title checked against primary publication listing",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-18.md",
+        "label": "Reinforcement Learning: An Introduction, second edition"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/1707.06347",
+    "checked_at": "2026-09-26T01:42:17.783715+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/1707.06347",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Proximal Policy Optimization Algorithms",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-20.md",
+        "label": "Schulman et al."
+      },
+      {
+        "file": "lecture-20.md",
+        "label": "Proximal Policy Optimization Algorithms"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2506.13585",
+    "checked_at": "2026-09-26T01:42:19.511680+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2506.13585",
+    "content_type": "text/html; charset=utf-8",
+    "title": "MiniMax-M1: Scaling Test-Time Compute Efficiently with Lightning Attention",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-20.md",
+        "label": "MiniMax-M1 technical report"
+      },
+      {
+        "file": "lecture-20.md",
+        "label": "MiniMax-M1: Scaling Test-Time Compute Efficiently with Lightning Attention"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2201.11903",
+    "checked_at": "2026-09-26T01:42:18.945131+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2201.11903",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-20.md",
+        "label": "Wei et al."
+      },
+      {
+        "file": "lecture-20.md",
+        "label": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2205.11916",
+    "checked_at": "2026-09-26T01:42:19.091890+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2205.11916",
+    "content_type": "text/html; charset=utf-8",
+    "title": "Large Language Models are Zero-Shot Reasoners",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-20.md",
+        "label": "Kojima et al."
+      },
+      {
+        "file": "lecture-20.md",
+        "label": "Large Language Models are Zero-Shot Reasoners"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2501.12948",
+    "checked_at": "2026-09-26T01:42:19.455072+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2501.12948",
+    "content_type": "text/html; charset=utf-8",
+    "title": "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-20.md",
+        "label": "DeepSeek-R1"
+      },
+      {
+        "file": "lecture-20.md",
+        "label": "DeepSeek-R1"
+      }
+    ]
+  },
+  {
+    "url": "https://arxiv.org/abs/2402.03300",
+    "checked_at": "2026-09-26T01:42:19.302377+00:00",
+    "http_status": 200,
+    "final_url": "https://arxiv.org/abs/2402.03300",
+    "content_type": "text/html; charset=utf-8",
+    "title": "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models",
+    "status": "retrieved",
+    "used_in": [
+      {
+        "file": "lecture-20.md",
+        "label": "DeepSeekMath"
+      },
+      {
+        "file": "lecture-20.md",
+        "label": "DeepSeekMath"
+      }
+    ]
+  }
+]

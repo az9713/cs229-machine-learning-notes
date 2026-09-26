@@ -1,0 +1,286 @@
+{
+  "scope": "Only files in this edition artifact-manifest.json; other existing material is not modified or covered by these results.",
+  "source_hashes_checked": 17,
+  "static": [
+    {
+      "page": "index.html",
+      "timestamp_links": 0,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-01.html",
+      "timestamp_links": 5,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-02.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-03.html",
+      "timestamp_links": 5,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-04.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-05.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-06.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-07.html",
+      "timestamp_links": 7,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-08.html",
+      "timestamp_links": 5,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-09.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-10.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-11.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-12.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-13.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-14.html",
+      "timestamp_links": 7,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-16.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-18.html",
+      "timestamp_links": 6,
+      "result": "passed"
+    },
+    {
+      "page": "lecture-20.html",
+      "timestamp_links": 7,
+      "result": "passed"
+    },
+    {
+      "page": "source-map.html",
+      "timestamp_links": 102,
+      "result": "passed"
+    },
+    {
+      "page": "study-guide.html",
+      "timestamp_links": 0,
+      "result": "passed"
+    }
+  ],
+  "browser": [
+    {
+      "page": "index.html",
+      "math_expressions": 1,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-01.html",
+      "math_expressions": 134,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-02.html",
+      "math_expressions": 211,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-03.html",
+      "math_expressions": 167,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-04.html",
+      "math_expressions": 210,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-05.html",
+      "math_expressions": 179,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-06.html",
+      "math_expressions": 122,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-07.html",
+      "math_expressions": 151,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-08.html",
+      "math_expressions": 179,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-09.html",
+      "math_expressions": 114,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-10.html",
+      "math_expressions": 155,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-11.html",
+      "math_expressions": 142,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-12.html",
+      "math_expressions": 175,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-13.html",
+      "math_expressions": 125,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-14.html",
+      "math_expressions": 149,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-16.html",
+      "math_expressions": 113,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-18.html",
+      "math_expressions": 143,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "lecture-20.html",
+      "math_expressions": 165,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "source-map.html",
+      "math_expressions": 0,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    },
+    {
+      "page": "study-guide.html",
+      "math_expressions": 5,
+      "desktop_and_mobile": "passed",
+      "console_errors": []
+    }
+  ],
+  "numerical_checks": [
+    {
+      "check": "Lecture 2 exact OLS coefficients",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 2 initial gradient",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 2 one-step objective",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 5 rare-class boundary",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 6 approximation error of constant for x squared",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 10 PCA eigenvalues",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 11 posterior variance",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 12 LoRA parameter reduction",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 13 three-candidate loss",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 14 attention weighted mean",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 16 GQA eight-head cache GiB",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 18 repeated inspection value",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 20 constant baseline variance",
+      "result": "passed"
+    },
+    {
+      "check": "Lecture 20 rare-positive group chance",
+      "result": "passed"
+    }
+  ]
+}

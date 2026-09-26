@@ -1,0 +1,330 @@
+# Lecture 10 — Expectation–maximization and principal component analysis
+
+The property archive presents two different kinds of hidden structure. Measurements may come from several overlapping populations, suggesting a mixture model. Alternatively, many sensors may respond to a few common factors, suggesting a low-dimensional subspace. Expectation–maximization and principal component analysis address these structures through different objectives.
+
+The recording first derives EM and Gaussian-mixture updates, then develops PCA through projection and covariance eigenvectors. This chapter follows that order. The property examples, numerical checks, and counterexamples are original. Research extensions connect PCA to a probabilistic latent-variable model and to scalable matrix approximation; they are not presented as additional recorded material.
+
+## 1. The ELBO separates model fitting from latent inference [06:00](https://www.youtube.com/watch?v=sUS-eTa0l6s&t=360s)
+
+Let $x$ be an observed data vector, $z$ an unobserved variable, and $\theta$ the parameters of a joint model $p_\theta(x,z)$. The observed likelihood marginalizes the latent variable:
+
+$$p_\theta(x)=\sum_zp_\theta(x,z).$$
+
+For a continuous latent variable, replace the sum with an integral. The marginalization identity is general; the substantive modeling choice is the particular joint distribution and whether its posterior can be computed or approximated usefully.
+
+Choose a distribution $q(z)$ and define the evidence lower bound
+
+$$\mathcal L(q,\theta)
+=\sum_zq(z)\log p_\theta(x,z)-\sum_zq(z)\log q(z).$$
+
+The second term is the entropy of $q$. The word “evidence” refers to the marginal likelihood of the observation, not to an external guarantee that the model is true.
+
+Bayes' rule gives $p_\theta(x,z)=p_\theta(z\mid x)p_\theta(x)$. Substituting into the bound yields
+
+$$\mathcal L(q,\theta)=\log p_\theta(x)
+-\sum_zq(z)\log\frac{q(z)}{p_\theta(z\mid x)}.$$
+
+Therefore
+
+$$\boxed{\log p_\theta(x)=
+\mathcal L(q,\theta)+\operatorname{KL}
+\!\left(q\,\|\,p_\theta(z\mid x)\right).}$$
+
+The Kullback–Leibler divergence is nonnegative and equals zero when the distributions agree, subject to the usual support conventions. If $q$ assigns mass where the posterior is zero, the divergence is infinite and the bound can be negative infinity. The identity explains both the lower-bound property and the exact condition for tightness.
+
+For a simple numerical case, suppose the joint probabilities at the observed $x$ are $(0.2,0.3)$ for two latent states. The evidence is $0.5$, and the posterior is $(0.4,0.6)$. Using $q=(0.5,0.5)$ gives
+
+$$\mathcal L=\frac12\log0.4+\frac12\log0.6
+\approx-0.713558,$$
+
+while $\log p(x)=\log0.5\approx-0.693147$. The gap is about $0.020411$, exactly $\operatorname{KL}((0.5,0.5)\|(0.4,0.6))$.
+
+The next calculation verifies the identity directly. It evaluates fixed, positive probability arrays and has no external effects.
+
+```python
+import numpy as np
+
+joint = np.array([0.2, 0.3])
+q = np.array([0.5, 0.5])
+posterior = joint / joint.sum()
+elbo = np.sum(q * (np.log(joint) - np.log(q)))
+gap = np.sum(q * (np.log(q) - np.log(posterior)))
+assert np.isclose(np.log(joint.sum()), elbo + gap)
+assert gap > 0
+tight_elbo = np.sum(
+    posterior * (np.log(joint) - np.log(posterior))
+)
+assert np.isclose(tight_elbo, np.log(joint.sum()))
+```
+
+The latent variable and its posterior are different objects. In a mixture, $Z_i$ is a categorical component indicator. A vector such as $(0.4,0.6)$ is a distribution over its possible values, not the indicator itself. Keeping those objects separate prevents confusion between a hidden assignment and uncertainty about that assignment.
+
+For independent observations, each observation has its own distribution $q_i(z_i)$. The total ELBO sums their contributions. Using one identical responsibility vector for every observation would generally impose an additional, unjustified constraint.
+
+## 2. EM improves a tight bound, with carefully limited guarantees [13:00](https://www.youtube.com/watch?v=sUS-eTa0l6s&t=780s)
+
+At iteration $t$, the E-step sets
+
+$$q_i^{(t)}(z)=p_{\theta_t}(z\mid x_i).$$
+
+This is inference under the current parameters. It does not reveal the true latent assignment; it computes the model's current posterior. The M-step then optimizes the same bound while holding those distributions fixed:
+
+$$\theta_{t+1}\in\arg\max_\theta
+\sum_i\mathbb E_{q_i^{(t)}}[\log p_\theta(x_i,Z_i)].$$
+
+The entropy terms can be dropped from this maximization because they do not depend on the candidate $\theta$. Differentiating the responsibilities during the M-step would change the objective being optimized.
+
+Write $\ell(\theta)=\sum_i\log p_\theta(x_i)$ and $\mathcal L(q,\theta)$ for the total bound. Tightness at the old parameters and improvement of the fixed bound give
+
+$$\ell(\theta_{t+1})\ge\mathcal L(q^{(t)},\theta_{t+1})
+\ge\mathcal L(q^{(t)},\theta_t)=\ell(\theta_t).$$
+
+This three-step inequality is the whole monotonicity argument. A generalized EM step needs only to increase the fixed surrogate, rather than maximize it exactly. Merely taking an arbitrary gradient step does not ensure that increase; its step size and objective value still matter.
+
+Monotonicity concerns likelihood values. Individual coordinates of $\theta$ need not increase. A bounded monotone likelihood sequence converges in value, but that statement alone does not prove finite termination, convergence of the parameter sequence, or convergence to a global optimum. Gaussian-mixture likelihood can also be unbounded because of covariance collapse, as Lecture 9 demonstrated.
+
+Nor is every EM surrogate globally concave in every parameterization. The method is useful when conditional structure makes the M-step tractable or allows reliable improvement. Introducing a latent variable does not magically solve an otherwise intractable posterior calculation.
+
+### An approximate posterior changes the guarantee
+
+If $q$ belongs to a restricted family that cannot match the exact posterior, the old bound may not touch the old likelihood. Improving that bound does not necessarily improve observed likelihood.
+
+For a concrete counterexample, consider two candidate models at one observed discrete outcome. Model A assigns evidence $0.8$ and posterior $(0.99,0.01)$; model B assigns evidence $0.7$ and posterior $(0.5,0.5)$. Fix the approximate distribution $q=(0.5,0.5)$. Under A the ELBO is
+
+$$\log0.8-\operatorname{KL}(q\|(0.99,0.01))
+\approx-1.8376.$$
+
+Under B the bound is tight and equals $\log0.7\approx-0.3567$. The bound improves greatly while the evidence falls from $0.8$ to $0.7$. Both models can be completed into valid joint distributions by allocating the remaining probability to other observed outcomes.
+
+This does not make variational inference invalid. It specifies which objective it improves. The exact identity $\Delta\log p=\Delta\mathcal L+\Delta\operatorname{KL}$ shows why a falling inference gap can outweigh an increasing bound in the comparison of likelihoods.
+
+The original [Dempster–Laird–Rubin paper](https://doi.org/10.1111/j.2517-6161.1977.tb01600.x) develops EM for incomplete-data likelihood problems. The textbook lesson is to track the objective and tightness conditions, rather than infer a global guarantee from the names “expectation” and “maximization.”
+
+## 3. Gaussian-mixture updates follow from weighted likelihood [33:00](https://www.youtube.com/watch?v=sUS-eTa0l6s&t=1980s)
+
+For a $K$-component mixture, let $r_{ij}$ be the fixed E-step responsibility and $N_j=\sum_i r_{ij}$. Ignoring terms constant in $\theta$, the M-step objective is
+
+$$Q(\theta)=\sum_{i,j}r_{ij}
+\left[\log\pi_j-\frac12\log|\Sigma_j|
+-\frac12(x_i-\mu_j)^\top\Sigma_j^{-1}(x_i-\mu_j)\right].$$
+
+The constraints are $\sum_j\pi_j=1$, $\pi_j\ge0$, and positive definite $\Sigma_j$ for nonsingular Gaussian densities. We derive interior updates for components with positive effective counts and nonsingular weighted scatter.
+
+For a mean, differentiation gives
+
+$$\nabla_{\mu_j}Q
+=\Sigma_j^{-1}\sum_i r_{ij}(x_i-\mu_j).$$
+
+Invertibility implies that setting the derivative to zero is equivalent to setting the weighted residual sum to zero. Hence
+
+$$\mu_j^{\rm new}=\frac{\sum_i r_{ij}x_i}{N_j}.$$
+
+This is not an intuitive guess inserted into the algorithm; it is the conditional likelihood maximizer.
+
+For mixing weights, maximize $\sum_jN_j\log\pi_j$ subject to their sum being one. With multiplier $\lambda$, use
+
+$$\mathcal A(\pi,\lambda)=\sum_jN_j\log\pi_j
++\lambda\left(1-\sum_j\pi_j\right).$$
+
+The derivative equation is $N_j/\pi_j-\lambda=0$, so $\pi_j=N_j/\lambda$. Summing over components gives $\lambda=\sum_jN_j=n$, because each responsibility row sums to one. Therefore $\pi_j^{\rm new}=N_j/n$. Dropping the constraint would eliminate the normalization that makes these values probabilities.
+
+For covariance, define weighted scatter around the new mean,
+
+$$S_j=\sum_i r_{ij}(x_i-\mu_j^{\rm new})
+(x_i-\mu_j^{\rm new})^\top.$$
+
+Use precision $\Omega_j=\Sigma_j^{-1}$. The relevant objective is
+
+$$Q_j(\Omega_j)=\frac{N_j}{2}\log|\Omega_j|
+-\frac12\operatorname{tr}(\Omega_jS_j).$$
+
+Its derivative is $(N_j/2)\Omega_j^{-1}-S_j/2$, yielding $\Sigma_j^{\rm new}=S_j/N_j$. This derivation also reveals the singular case: if weighted scatter lacks full rank, an ordinary positive definite covariance optimum may not exist.
+
+The three updates use the same responsibilities. Recomputing responsibilities between partially completed updates defines a different schedule that requires its own objective accounting. For the standard batch EM iteration, complete the E-step, then perform the M-step using those fixed weights.
+
+### A weighted example distinct from hard assignment
+
+Suppose property measurements are $0,2,4$, and one component has responsibilities $(0.8,0.5,0.2)$. Its effective count is $1.5$, its updated mixture weight is $1.5/3=0.5$, and its mean is
+
+$$\mu=\frac{0(0.8)+2(0.5)+4(0.2)}{1.5}=1.2.$$
+
+Its variance is
+
+$$\frac{0.8(0-1.2)^2+0.5(2-1.2)^2
++0.2(4-1.2)^2}{1.5}
+=\frac{3.04}{1.5}\approx2.0267.$$
+
+Every point contributes fractionally. These prescribed weights illustrate the M-step algebra; they are not claimed to be the posterior of an unstated initial model.
+
+For our service, the mixture interpretation is “several populations with their own local means and covariance shapes.” The next method addresses a different idea: “one collection of measurements lying mostly near a shared subspace.” PCA is not the nonprobabilistic version of every EM problem; the two connect through particular latent-variable models.
+
+## 4. PCA starts by defining what variation should be preserved [48:00](https://www.youtube.com/watch?v=sUS-eTa0l6s&t=2880s)
+
+Principal component analysis, or PCA, selects orthogonal directions that retain as much empirical variance as possible. Let the training mean be $\bar x=n^{-1}\sum_i x_i$ and centered observations be $\tilde x_i=x_i-\bar x$. Define
+
+$$C=\frac1n\sum_i\tilde x_i\tilde x_i^\top.$$
+
+We use the $1/n$ convention for clean reconstruction identities. Replacing it by $1/(n-1)$ rescales all eigenvalues but leaves principal directions and explained-variance ratios unchanged.
+
+Centering matters because
+
+$$\frac1n\sum_ix_ix_i^\top=C+\bar x\bar x^\top.$$
+
+An uncentered second-moment decomposition can devote its leading direction to the mean offset rather than variation around the mean. That can be a legitimate different analysis, but it is not covariance PCA.
+
+For example, measurements concentrated near $(100,0)$ may vary mainly along the second coordinate. Their uncentered second moment can still be dominated by the squared offset $100^2$ along the first coordinate. Subtracting the training mean removes that rank-one offset contribution.
+
+### Centering, standardization, and whitening are different operations
+
+Centering subtracts feature means. Standardization also divides each nonconstant feature by its standard deviation, not its variance. Whitening additionally removes correlations and rescales principal directions to unit variance.
+
+Whether to standardize depends on the question. If two sensors have arbitrary incompatible units, covariance PCA may be dominated by unit choice. Standardization makes one empirical standard deviation comparable across features. If absolute variance already has a meaningful shared unit, standardization can discard a relevant scale distinction.
+
+A constant feature has zero standard deviation and cannot be standardized by division without a policy. Missing values require a specified treatment as well; ordinary PCA on a complete numerical matrix does not automatically perform valid missing-data inference. Fit any imputation, centering, and scaling on the training portion before applying them to held-out observations.
+
+The property service might use PCA to summarize correlated moisture sensors. High variance is then a criterion for preserving measurement variation. It is not automatically a criterion for predicting urgency. A low-variance sensor can carry the decisive label information and be removed by aggressive variance-based truncation.
+
+## 5. Maximum variance and minimum reconstruction error give the same subspace [56:00](https://www.youtube.com/watch?v=sUS-eTa0l6s&t=3360s)
+
+For a unit vector $u$, the line it spans consists of points $au$ with scalar $a$. To find the closest point on the line to a centered observation $\tilde x$, minimize
+
+$$\|\tilde x-au\|^2
+=\|\tilde x\|^2-2a\,u^\top\tilde x+a^2.$$
+
+Differentiating with respect to $a$ gives $a=u^\top\tilde x$. Thus the orthogonal projection is $uu^\top\tilde x$. The residual is orthogonal to $u$, and its squared norm is $\|\tilde x\|^2-(u^\top\tilde x)^2$.
+
+Averaging the projected squared coordinate gives
+
+$$\frac1n\sum_i(u^\top\tilde x_i)^2=u^\top Cu.$$
+
+Because the total average squared norm is fixed, maximizing this retained variance is equivalent to minimizing average squared reconstruction error.
+
+The covariance matrix is symmetric positive semidefinite, so it has an orthonormal eigenbasis $v_1,\ldots,v_d$ with eigenvalues $\lambda_1\ge\cdots\ge\lambda_d\ge0$. Write $u=\sum_ja_jv_j$ with $\sum_ja_j^2=1$. Then
+
+$$u^\top Cu=\sum_j\lambda_ja_j^2\le\lambda_1.$$
+
+Putting all weight on a leading eigenvector achieves the maximum. This is the Rayleigh-quotient argument: the principal direction is an eigenvector, while its captured variance is the corresponding eigenvalue. Interchanging those two objects confuses a direction with a scalar.
+
+For a $k$-dimensional orthonormal basis $U_k\in\mathbb R^{d\times k}$, coordinates are $z_i=U_k^\top\tilde x_i$ and reconstructions are $\hat x_i=\bar x+U_kz_i$. The optimum takes the leading $k$ eigenvectors and satisfies
+
+$$\text{retained variance}=\sum_{j=1}^k\lambda_j,\qquad
+\frac1n\sum_i\|x_i-\hat x_i\|^2=\sum_{j=k+1}^d\lambda_j.$$
+
+The total variance is $\operatorname{tr}(C)=\sum_j\lambda_j$. Therefore the explained-variance ratio is $\sum_{j\le k}\lambda_j/\operatorname{tr}(C)$ when total variance is positive. With constant data, that ratio has a zero denominator and needs an explicit convention.
+
+### An exact two-sensor example
+
+Take centered observations $(2,2),(-2,-2),(1,-1),(-1,1)$. Their covariance is
+
+$$C=\begin{pmatrix}2.5&1.5\\1.5&2.5\end{pmatrix}.$$
+
+The principal directions are $v_1=(1,1)^\top/\sqrt2$ and $v_2=(1,-1)^\top/\sqrt2$, with eigenvalues 4 and 1. Keeping one component retains $4/5=80\%$ of the variance.
+
+The first two observations lie exactly on the leading line and reconstruct without error. The other two project to zero and each has squared residual 2. Average reconstruction error is $(0+0+2+2)/4=1$, exactly the discarded eigenvalue.
+
+This example is a model of common-mode versus differential sensor behavior. The leading component captures sensors moving together. If urgency is triggered by disagreement between sensors, the discarded component may be the more useful predictive feature. Reconstruction fidelity and prediction utility must be evaluated separately.
+
+### Compute PCA with a singular value decomposition
+
+Put centered observations in rows of $X_c$. If $X_c=USV^\top$ is a singular value decomposition, then
+
+$$C=\frac1nV S^\top S V^\top.$$
+
+The right singular vectors supply principal directions, and squared singular values divided by $n$ supply covariance eigenvalues. This avoids explicitly forming the covariance matrix and its squared conditioning.
+
+The function below accepts a finite complete data matrix and a requested positive component count. It returns the fitted mean, basis, retained variances, and reconstructions. It uses no automatic standardization, has no external effects, and rejects missing or nonfinite values.
+
+```python
+def pca_reconstruct(data, components):
+    data = np.asarray(data, dtype=float)
+    if data.ndim != 2 or not all(data.shape):
+        raise ValueError("Expected a nonempty data matrix")
+    if not np.isfinite(data).all():
+        raise ValueError("PCA requires finite complete data here")
+    if not isinstance(components, (int, np.integer)):
+        raise ValueError("Component count must be an integer")
+    if not 1 <= components <= min(data.shape):
+        raise ValueError("Component count exceeds available dimensions")
+    mean = data.mean(axis=0)
+    centered = data - mean
+    _, singular_values, vt = np.linalg.svd(centered, full_matrices=False)
+    basis = vt[:components].T
+    reconstruction = centered @ basis @ basis.T + mean
+    variance = singular_values[:components] ** 2 / len(data)
+    return mean, basis, variance, reconstruction
+
+
+data = np.array([[2, 2], [-2, -2], [1, -1], [-1, 1]], dtype=float)
+mean, basis, variance, reconstruction = pca_reconstruct(data, 1)
+assert np.allclose(mean, 0)
+assert np.allclose(basis.T @ basis, np.eye(1))
+assert np.allclose(variance, [4])
+assert np.isclose(np.mean(np.sum((data - reconstruction) ** 2, axis=1)), 1)
+assert np.allclose(basis @ basis.T, np.full((2, 2), 0.5))
+```
+
+The final assertion compares projectors, not eigenvector signs. Both $v$ and $-v$ define the same principal direction and reconstruction map. A test requiring one arbitrary sign would reject a mathematically equivalent result.
+
+## 6. Stable subspaces, probabilistic PCA, and practical limits [68:00](https://www.youtube.com/watch?v=sUS-eTa0l6s&t=4080s)
+
+If $\lambda_1>\lambda_2$, the leading direction is unique up to sign. If $\lambda_1=\lambda_2$, any unit vector in their joint eigenspace is a maximizer. Near equality can make individual directions sensitive to small perturbations.
+
+For a retained $k$-dimensional subspace, the crucial separation is often the gap between $\lambda_k$ and $\lambda_{k+1}$. Eigenvalues inside the retained block can be repeated while the entire retained subspace remains well determined. It is too strong to require every leading eigenvalue to be distinct before PCA is useful.
+
+This distinction matters for deployment. Fit the mean, scaling, and basis on training data and reuse that exact transformation on new observations. Independently refitting PCA on each batch can rotate or flip coordinates, invalidating a downstream model trained in the old coordinate system. Even perfectly distinct eigenvalues do not justify refitting a preprocessing map without updating its consumer.
+
+For the property service, save the basis with the regression or classification model that uses it. If the sensor population changes enough to warrant refitting PCA, evaluate and version the complete pipeline. Unsupervised preprocessing can still create leakage or deployment inconsistency.
+
+### Research extension: a latent Gaussian model unifies PCA and EM
+
+Probabilistic PCA specifies
+
+$$Z\sim\mathcal N(0,I_k),\qquad
+X=\mu+WZ+\epsilon,\qquad
+\epsilon\sim\mathcal N(0,\sigma^2I_d),$$
+
+with independent latent factors and noise. Marginalizing $Z$ gives
+
+$$X\sim\mathcal N(\mu,WW^\top+\sigma^2I_d).$$
+
+This is a continuous latent-variable model, unlike a mixture's categorical indicator. Its maximum-likelihood principal subspace connects to ordinary PCA, and it admits an EM fitting procedure. [Tipping and Bishop](https://www.microsoft.com/en-us/research/publication/probabilistic-principal-component-analysis/) develop that connection and its probabilistic benefits.
+
+The covariance equation is easy to derive: $\operatorname{Cov}(WZ)=WIW^\top$, independent noise contributes $\sigma^2I$, and cross-covariances vanish. The model says that structured covariance comes from $k$ factors while residual noise is isotropic. That isotropic assumption is substantive; arbitrary sensor-specific noise does not satisfy it.
+
+The loadings are not unique. Replacing $W$ by $WR$ for any orthogonal $R$ leaves $WW^\top$ unchanged. Latent axes can rotate without changing the observed distribution. This is the probabilistic analogue of distinguishing a subspace from a particular coordinate basis.
+
+For the two-sensor covariance with eigenvalues 4 and 1, a one-factor model can use noise variance 1 and $W=\sqrt3\,v_1$. Then $WW^\top+I=3v_1v_1^\top+I$, with eigenvalues 4 and 1. The numerical decomposition gives a concrete bridge between PCA variance and a generative covariance model.
+
+### Research extension: large matrices need not be decomposed completely
+
+If only a small leading subspace is needed, computing every eigenvector wastes work. Randomized matrix approximation samples a sketch of the matrix's action, finds a basis for that approximate range, and factors a smaller matrix. [Halko, Martinsson, and Tropp](https://arxiv.org/abs/0909.4061) provide algorithms, error analysis, and experiments for this approach.
+
+The approximation should be checked through residual error or an appropriate downstream criterion. A faster approximate decomposition does not remove sensitivity near a weak spectral gap, and a good low-rank matrix approximation does not guarantee useful labels.
+
+Whitening retained PCA coordinates gives $z_j=(v_j^\top(x-\bar x))/\sqrt{\lambda_j}$ for positive retained eigenvalues. Its empirical covariance is identity under the same covariance convention. Small eigenvalues amplify noise, so whitening requires a truncation or regularization policy. It is a separate transformation from centering and from ordinary PCA projection.
+
+## Exercises
+
+1. **Derive.** Starting from Bayes' rule, obtain the ELBO–KL identity and state when the lower bound is tight.
+2. **Compute.** For measurements $0,2,4$ and responsibilities $(0.8,0.5,0.2)$, verify the effective count, mean, and variance. Derive the mixing-weight normalization with a Lagrange multiplier.
+3. **Compute.** For the four-point sensor dataset, calculate the leading component scores and reconstruct all observations from one component. Verify the average error and explained-variance ratio.
+4. **Counterexample.** Construct a two-dimensional distribution in which the lower-variance coordinate perfectly predicts a binary label while the higher-variance coordinate is independent of it.
+5. **Design.** A deployed classifier fails after its team starts refitting PCA separately on every incoming batch. Explain the likely mathematical failure and propose a repair that also handles a nearly repeated leading eigenspace.
+
+<details><summary>Solutions</summary>
+
+1. Substitute $\log p_\theta(x,z)=\log p_\theta(z\mid x)+\log p_\theta(x)$ into the ELBO. Since $q$ sums to one, the evidence term comes out unchanged, and the remaining difference is minus $\operatorname{KL}(q\|p_\theta(z\mid x))$. Nonnegativity gives the lower bound. Equality requires agreement with the posterior almost everywhere under the appropriate support conditions. Exact EM exploits this equality at the current parameters before improving the bound.
+
+2. The effective count is $0.8+0.5+0.2=1.5$. The weighted sum is 1.8, giving mean 1.2. Weighted squared deviations sum to $1.152+0.32+1.568=3.04$, so variance is $3.04/1.5\approx2.0267$. For all components, differentiating $\sum_jN_j\log\pi_j+\lambda(1-\sum_j\pi_j)$ gives $\pi_j=N_j/\lambda$. Since $\sum_jN_j=n$, normalization forces $\lambda=n$.
+
+3. Using $v_1=(1,1)/\sqrt2$, scores are $2\sqrt2,-2\sqrt2,0,0$. Reconstructions are $(2,2),(-2,-2),(0,0),(0,0)$. Squared residuals are 0, 0, 2, and 2, with average 1. Total variance is 5 and retained variance is 4, so the ratio is 80%. Reversing the eigenvector sign reverses scores but leaves reconstructions unchanged.
+
+4. Let $Y$ be equally likely to be $-1$ or 1, let $X_1\sim\mathcal N(0,100)$ independently, and let $X_2=0.1Y$. The covariance is diagonal with entries 100 and 0.01. One-component covariance PCA keeps $X_1$ and loses all label information, while the sign of $X_2$ predicts $Y$ perfectly. The example concerns covariance PCA without feature standardization; changing preprocessing changes the variance objective but does not create a general guarantee of label relevance.
+
+5. The classifier's coefficients refer to the original PCA coordinates. New fits can change means, signs, and basis rotations, especially inside nearly repeated eigenspaces, so the same coordinate index no longer represents the same direction. Restore the frozen training transformation and apply it to incoming data. If refitting is necessary, retrain or explicitly transform the downstream model consistently and evaluate the whole pipeline. Compare subspace projectors when assessing nearly repeated components, and distinguish a stable retained subspace from unstable individual basis vectors.
+
+</details>
+
+## Primary references and evidence boundaries
+
+The [recording](https://www.youtube.com/watch?v=sUS-eTa0l6s) grounds the EM and PCA sequence. Primary extensions use [Dempster, Laird, and Rubin](https://doi.org/10.1111/j.2517-6161.1977.tb01600.x), [Tipping and Bishop's probabilistic PCA](https://www.microsoft.com/en-us/research/publication/probabilistic-principal-component-analysis/), and [Halko, Martinsson, and Tropp's randomized decomposition work](https://arxiv.org/abs/0909.4061). The KL counterexample, weighted calculation, sensor dataset, SVD check, and deployment analysis are original exposition. The chapter explicitly distinguishes likelihood convergence from parameter convergence, centering from whitening, and principal directions from their variances.

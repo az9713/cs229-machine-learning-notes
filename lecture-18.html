@@ -1,0 +1,191 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; object-src 'none'"><meta name="description" content="Independent transcript-grounded CS229 study notes with mathematical derivations, timestamped recordings, exercises and primary references."><title>Lecture 18 — Markov decisions, Bellman equations, and policy gradients | CS229 study notes</title><link rel="stylesheet" href="assets/notes.css"><script src="assets/math-config.js"></script><script defer src="assets/mathjax-tex-svg.js"></script><script defer src="assets/notes.js"></script></head><body><a class="skip" href="#main">Skip to content</a><header class="top"><div class="shell"><a class="brand" href="index.html">CS229 / STUDY NOTES</a><nav aria-label="Course navigation"><a href="index.html#chapters">Chapters</a><a href="source-map.html">Source map</a><a href="study-guide.html">Study guide</a></nav></div></header><div class="shell layout"><main id="main"><div class="label">CS229 · Spring 2026 · approximately 3,150 words</div><h1 id="lecture-18-markov-decisions-bellman-equations-and-policy-gradients">Lecture 18 — Markov decisions, Bellman equations, and policy gradients</h1><section class="source meta" aria-label="Source provenance"><p><b>Recording:</b> <a href="https://www.youtube.com/watch?v=xveNBYVTrqw">Stanford CS229 Machine Learning | Spring 2026 | Lecture 18: GMM (EM), PCA</a> · 76:25</p><p>English caption track marked non-automatic by YouTube · 1,436 timed segments · Retrieved 25 September 2026.</p><p>Timestamp links locate relevant discussion windows. Definitions and derivations are reconstructed; worked examples and exercises are original unless attributed. Research additions are labeled. Slide images were not comprehensively reviewed. <a href="source-map.html#lecture-18">See the section-level source map.</a></p></section><div class="toolrow"><button id="solutions" type="button">Show solutions</button><button id="print" type="button">Print / save PDF</button><a href="lecture-18.md">Editable Markdown</a></div><nav class="pager" aria-label="Chapter sequence"><a href="lecture-16.html">Previous ·  Efficient transformers and the difference between prompting and training</a><a href="lecture-20.html">Next ·  Credit assignment, PPO, and reinforcement learning for language models</a></nav>
+<p>An inspection robot must reach a damaged wall, collect a useful image, and return without wasting its battery. Moving closer to the wall may look good immediately, yet a barrier can make a temporary detour the best action. The assistant controlling the robot receives outcomes, not a label specifying the optimal move at every instant.</p>
+<p>Reinforcement learning formalizes this interaction through states, actions, transitions, rewards, and a policy. The recording develops these objects using a robot on a one-dimensional track, then derives a gradient estimator that does not require differentiating the environment. We use a small inspection-track model throughout. The formal assumptions, numerical calculations, code, and worked solutions are original teaching contributions. Each research extension cites its primary source. Caption-based coverage does not imply visual board review.</p>
+<h2 id="1-a-state-must-summarize-the-information-needed-for-the-future-0718">1. A state must summarize the information needed for the future <a href="https://www.youtube.com/watch?v=xveNBYVTrqw&amp;t=438s">07:18</a></h2>
+<p>A Markov decision process, or MDP, consists here of a state space $\mathcal S$, action space $\mathcal A$, transition probabilities $P(s&#x27;\mid s,a)$, expected immediate reward $r(s,a)$, and discount factor $\gamma$. We begin with finite spaces and $0\le\gamma&lt;1$. An initial distribution $\rho_0(s)$ specifies where episodes begin.</p>
+<p>At time $t$, the system occupies state $S_t$, selects action $A_t$, receives reward $R_t$, and moves to $S_{t+1}$. We use the convention
+$\mathbb E[R_t\mid S_t=s,A_t=a]=r(s,a)$.
+The recording often uses a state-only reward $r(s)$, which is a special case. Rewards can also depend on the next state; averaging over that transition gives the expected $r(s,a)$ used in a Bellman equation.</p>
+<p>The Markov condition is</p>
+<p>$$P(S_{t+1}=s&#x27;\mid S_0,A_0,\ldots,S_t,A_t)
+=P(s&#x27;\mid S_t,A_t).$$</p>
+<p>Every fixed state-action pair defines a nonnegative distribution summing to one over $s&#x27;$. The action affects this distribution. A state is therefore not merely a label for the current photograph; it must carry the information needed by the transition model.</p>
+<p>For a robot at track cell 7, a “left” command might move it to cell 6 with probability $0.9$ and leave it at 7 with probability $0.1$. These are transitions, not probabilities of choosing the command. The policy chooses the action; the environment determines its consequences.</p>
+<h3 id="a-camera-frame-may-be-an-observation-rather-than-a-state">A camera frame may be an observation rather than a state</h3>
+<p>Two robots can have the same position and camera image but different velocities. If that difference changes the next position after a control input, position and image alone are not Markov. Battery, actuator condition, or hidden obstacles can cause similar failures.</p>
+<p>A partially observed model distinguishes hidden state from observation. One remedy is to retain history or a belief distribution over hidden states; this enlarges the decision representation. We will not solve that problem here. The important boundary is that declaring an input vector to be “the state” does not establish the Markov assumption.</p>
+<p>The framework concerns rewards rather than required action labels, but this does not mean reinforcement learning has no supervision. Reward design, demonstrations, human preferences, and simulators can all encode substantial information. Online trial and error is one setting; offline reinforcement learning instead uses previously collected interactions.</p>
+<h2 id="2-rewards-define-an-objective-not-merely-a-training-hint-1812">2. Rewards define an objective, not merely a training hint <a href="https://www.youtube.com/watch?v=xveNBYVTrqw&amp;t=1092s">18:12</a></h2>
+<p>For a trajectory, define discounted return</p>
+<p>$$G_0=\sum_{t=0}^\infty\gamma^t R_t.$$</p>
+<p>If $|R_t|\le R_{\max}$, then
+$|G_0|\le R_{\max}\sum_{t\ge0}\gamma^t=R_{\max}/(1-\gamma)$.
+The geometric series follows from $V=1+\gamma V$, hence $V=1/(1-\gamma)$, not $1-\gamma$.</p>
+<p>Discounting gives later rewards less weight and ensures bounded return under the stated assumptions. For finite horizon $H$, a sum through $H-1$ can use $\gamma=1$ without an infinite-series problem. These are different objective conventions, not interchangeable algebra.</p>
+<p>For our robot, define three states: $U$ (uninspected location), $G$ (a productive inspection position), and $D$ (a failed terminal condition). At $U$, action “inspect” earns immediate reward $-1$ and transitions to $G$ with probability $0.8$, to $D$ with probability $0.2$. Action “wait” earns zero and stays at $U$. At $G$, a continuing task earns reward $2$ each step and remains there; at $D$, rewards remain zero. Set $\gamma=0.9$.</p>
+<p>This model intentionally rewards continued useful operation at $G$. If the real task instead pays once and terminates upon inspection, its return is different. With one-time terminal payoff $2$ on the next step, inspecting has return $-1+0.9(0.8)(2)=0.44$. With perpetual reward at $G$, its value will be much larger. Terminal conventions must be specified before interpreting a number.</p>
+<h3 id="shaping-can-change-which-action-is-optimal">Shaping can change which action is optimal</h3>
+<p>Adding a reward for moving closer can accidentally penalize a necessary detour. Adding a reward for standing near the goal can make indefinite lingering attractive. These are changes to the objective, even when intended only to help learning.</p>
+<p>A research extension gives a principled special case. Choose a bounded potential function $\Phi:\mathcal S\to\mathbb R$ and add</p>
+<p>$$F(s,a,s&#x27;)=\gamma\Phi(s&#x27;)-\Phi(s)$$</p>
+<p>to each reward. Along an infinite discounted trajectory,</p>
+<p>$$\sum_{t=0}^\infty\gamma^t F(S_t,A_t,S_{t+1})
+=-\Phi(S_0),$$</p>
+<p>because consecutive terms telescope and the bounded terminal remainder vanishes as $\gamma^t\to0$. For a fixed initial state, every policy's return shifts by the same quantity. This preserves policy rankings under these assumptions. <a href="https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf">Ng, Harada, and Russell</a> establishes potential-based shaping. In a finite episode, a terminal potential term remains unless boundary conditions remove it.</p>
+<p>Exploration and exploitation form another distinction. Exploitation chooses well given current knowledge; it need not be myopic, since it can optimize long-term known consequences. Exploration seeks information whose value may appear later. The algorithms developed here use stochastic policies, but stochasticity alone does not guarantee efficient exploration.</p>
+<h2 id="3-a-policy-induces-values-for-every-starting-state-3157">3. A policy induces values for every starting state <a href="https://www.youtube.com/watch?v=xveNBYVTrqw&amp;t=1917s">31:57</a></h2>
+<p>A stochastic policy $\pi(a\mid s)$ is a probability distribution over available actions at state $s$. A deterministic policy assigns one action with probability one. Define</p>
+<p>$$V^\pi(s)=\mathbb E_\pi[G_0\mid S_0=s],\qquad
+J(\pi)=\mathbb E_{S_0\sim\rho_0}[V^\pi(S_0)].$$</p>
+<p>The value function retains the starting state as an argument. The scalar objective $J$ averages over starting states. Both depend on the policy because actions change which states and rewards occur.</p>
+<p>In a finite discounted MDP with unrestricted policies and expected additive reward, an optimal deterministic stationary policy exists. Once optimal action values are known, a convex combination of action values cannot exceed their maximum; choose a maximizing action at each state. The Bellman optimality equation below makes this argument precise.</p>
+<p>This does not establish that deterministic policies are always sufficient under arbitrary constraints, partial observation, multi-agent games, or entropy bonuses. In a finite-horizon task, optimal decisions may depend on remaining time; time can be included in the state. During learning, a smooth stochastic policy also gives a differentiable parameterization and samples alternative actions.</p>
+<p>For example, a binary policy can use $p_\theta=\sigma(\theta)=1/(1+e^{-\theta})$ for “inspect” and $1-p_\theta$ for “wait.” Changing $\theta$ changes probabilities continuously. A hard argmax policy can remain unchanged under small parameter movements, making ordinary score-based gradients inapplicable in the form used below.</p>
+<h2 id="4-bellman-equations-replace-trajectory-enumeration-with-recursion-4316">4. Bellman equations replace trajectory enumeration with recursion <a href="https://www.youtube.com/watch?v=xveNBYVTrqw&amp;t=2596s">43:16</a></h2>
+<p>Separate the first reward from the rest:</p>
+<p>$$G_0=R_0+\gamma G_1.$$</p>
+<p>Condition first on the action and next state, then use the Markov property and the policy's continuation rule. This yields</p>
+<p>$$V^\pi(s)=
+\sum_a\pi(a\mid s)\left[
+r(s,a)+\gamma\sum_{s&#x27;}P(s&#x27;\mid s,a)V^\pi(s&#x27;)
+\right].$$</p>
+<p>This is the Bellman expectation equation. It evaluates a fixed policy; it does not yet choose the best action. Define the policy-induced transition matrix
+$P_\pi(s,s&#x27;)=\sum_a\pi(a\mid s)P(s&#x27;\mid s,a)$
+and reward vector $r_\pi(s)=\sum_a\pi(a\mid s)r(s,a)$. In vector form,</p>
+<p>$$V^\pi=r_\pi+\gamma P_\pi V^\pi,\qquad
+(I-\gamma P_\pi)V^\pi=r_\pi.$$</p>
+<p>Since a stochastic matrix has spectral radius at most one and $\gamma&lt;1$, the inverse exists. More constructively,
+$(I-\gamma P_\pi)^{-1}=\sum_{t\ge0}\gamma^tP_\pi^t$.
+Each term propagates expected rewards another step into the future.</p>
+<h3 id="solving-the-inspection-example">Solving the inspection example</h3>
+<p>Under a policy that always inspects at $U$, the equations are</p>
+<p>$$V(G)=2+0.9V(G),\quad V(D)=0+0.9V(D),$$
+$$V(U)=-1+0.9[0.8V(G)+0.2V(D)].$$</p>
+<p>Thus $V(G)=20$, $V(D)=0$, and $V(U)=13.4$. The immediate cost is worthwhile because it enables future reward. Always waiting at $U$ gives zero.</p>
+<p>If the policy inspects with probability $p$ on each visit to $U$, then</p>
+<p>$$V_p(U)=13.4p+0.9(1-p)V_p(U)
+=\frac{13.4p}{0.1+0.9p}.$$</p>
+<p>At $p=0.5$, value is $67/5.5\approx12.1818$. The result is not simply $p$ times $13.4$, because a wait can be followed by another chance to inspect.</p>
+<p>The following finite-state evaluator takes a row-stochastic transition matrix, finite reward vector, and discount in $[0,1)$. It returns values by solving a linear system, raises errors for invalid inputs, and has no side effects. It evaluates a supplied policy; it does not learn unknown transitions.</p>
+<pre><code class="language-python">import numpy as np
+
+
+def policy_value(transitions, rewards, gamma):
+    transitions = np.asarray(transitions, float)
+    rewards = np.asarray(rewards, float)
+    if rewards.ndim != 1 or not len(rewards):
+        raise ValueError(&quot;Rewards must be a nonempty vector&quot;)
+    if (transitions.ndim != 2
+            or transitions.shape != (len(rewards), len(rewards))):
+        raise ValueError(&quot;Use a square transition matrix and reward vector&quot;)
+    if not np.isfinite(transitions).all() or not np.isfinite(rewards).all():
+        raise ValueError(&quot;Inputs must be finite&quot;)
+    if np.any(transitions &lt; 0) or not np.allclose(transitions.sum(axis=1), 1):
+        raise ValueError(&quot;Transition rows must be probability distributions&quot;)
+    if not np.isfinite(gamma) or not 0 &lt;= gamma &lt; 1:
+        raise ValueError(&quot;Discount must lie in [0, 1)&quot;)
+    return np.linalg.solve(np.eye(len(rewards)) - gamma * transitions, rewards)
+
+
+P = np.array([[0, 0.8, 0.2], [0, 1, 0], [0, 0, 1]])
+r = np.array([-1.0, 2.0, 0.0])
+values = policy_value(P, r, 0.9)
+assert np.allclose(values, [13.4, 20, 0])
+assert np.allclose(values, r + 0.9 * P @ values)
+mixed_P = P.copy()
+mixed_P[0] = [0.5, 0.4, 0.1]
+assert np.isclose(policy_value(mixed_P, [-0.5, 2, 0], 0.9)[0], 13.4 / 1.1)
+</code></pre>
+<h3 id="optimality-and-convergence">Optimality and convergence</h3>
+<p>The optimal value satisfies</p>
+<p>$$V^*(s)=\max_a\left[r(s,a)+\gamma\sum_{s&#x27;}P(s&#x27;\mid s,a)V^*(s&#x27;)\right].$$</p>
+<p>Let $\mathcal T$ denote this right-hand-side operator. For any two value vectors $u,v$, the difference between the maxima is at most the largest difference between corresponding action expressions. Since transition probabilities sum to one,</p>
+<p>$$\|\mathcal Tu-\mathcal Tv\|_\infty\le\gamma\|u-v\|_\infty.$$</p>
+<p>The maximum norm $\|\cdot\|_\infty$ is the largest absolute coordinate. This contraction yields a unique fixed point and convergence of value iteration in finite discounted MDPs. A Bellman residual $\|\mathcal Tv-v\|_\infty\le\epsilon$ implies value error at most $\epsilon/(1-\gamma)$. Near $\gamma=1$, small local errors can accumulate into substantial value errors.</p>
+<p>These statements require a known or estimated transition model for direct computation. The final part of the chapter instead learns from sampled trajectories.</p>
+<h2 id="5-differentiating-an-expectation-whose-distribution-changes-5539">5. Differentiating an expectation whose distribution changes <a href="https://www.youtube.com/watch?v=xveNBYVTrqw&amp;t=3339s">55:39</a></h2>
+<p>Let $\pi_\theta$ be a differentiable stochastic policy and
+$J(\theta)=\mathbb E_{\tau\sim p_\theta}[G(\tau)]$,
+where $\tau$ denotes a complete trajectory and $G(\tau)$ its return. The reward on a fixed recorded trajectory may have no explicit dependence on $\theta$. The expectation still depends on $\theta$ because different policies sample different trajectories.</p>
+<p>For a generic random variable $X$ with density or mass $p_\theta(x)$ and a parameter-independent function $f$, differentiation gives</p>
+<p>$$\nabla_\theta\mathbb E_{p_\theta}[f(X)]
+=\int f(x)\nabla_\theta p_\theta(x)\,dx
+=\mathbb E_{p_\theta}\left[f(X)\nabla_\theta\log p_\theta(X)\right].$$</p>
+<p>For a discrete variable, replace the integral with a sum. The hinge is
+$\nabla p=p\nabla\log p$, which restores a sampling distribution after differentiation. The vector $\nabla_\theta\log p_\theta(X)$ is called the score.</p>
+<p>The interchange of derivative and integral needs regularity, such as a dominating integrable derivative, and a suitable parameter-independent support. A moving-boundary distribution is a useful warning: for $X\sim\operatorname{Uniform}(0,\theta)$, naively using only the interior score misses a boundary term. The identity is not permission to ignore support changes.</p>
+<p>If $f$ also depends explicitly on $\theta$, add the term $\mathbb E[\nabla_\theta f_\theta(X)]$. That distinction matters when a reward or regularizer shares trainable parameters.</p>
+<h3 id="a-two-action-check">A two-action check</h3>
+<p>Take $A\in\{0,1\}$ with $P(A=1)=p_\theta=\sigma(\theta)$, and rewards $r_0=0,r_1=2$. Then $J=2p_\theta$, so
+$dJ/d\theta=2p_\theta(1-p_\theta)$.
+The Bernoulli score is $A-p_\theta$. The score estimator is therefore $r_A(A-p_\theta)$.</p>
+<p>At $p_\theta=1/4$, action one gives estimator $2(3/4)=1.5$ and occurs with probability $1/4$; action zero gives zero. Its mean is $0.375$, agreeing with the analytic derivative. The estimator is unbiased but noisy: its variance is $0.421875$. The next chapter develops ways to reduce this noise.</p>
+<h2 id="6-reinforce-removes-the-need-to-differentiate-the-environment-6919">6. REINFORCE removes the need to differentiate the environment <a href="https://www.youtube.com/watch?v=xveNBYVTrqw&amp;t=4159s">69:19</a></h2>
+<p>For a finite horizon $H$, a trajectory density factors as</p>
+<p>$$p_\theta(\tau)=\rho_0(s_0)
+\prod_{t=0}^{H-1}\pi_\theta(a_t\mid s_t)P(s_{t+1}\mid s_t,a_t).$$</p>
+<p>Assume initial distribution, transitions, and reward rule do not depend on $\theta$. Taking the logarithm converts the product into a sum. Differentiating eliminates the initial and transition terms:</p>
+<p>$$\nabla_\theta\log p_\theta(\tau)
+=\sum_{t=0}^{H-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t).$$</p>
+<p>Hence</p>
+<p>$$\nabla_\theta J(\theta)=
+\mathbb E_{\pi_\theta}\left[
+G(\tau)\sum_{t=0}^{H-1}
+\nabla_\theta\log\pi_\theta(A_t\mid S_t)
+\right].$$</p>
+<p>We need to sample the environment and observe rewards, but need not know its transition probabilities or differentiate a physical robot. This score-function estimator underlies <a href="https://doi.org/10.1007/BF00992696">Williams's REINFORCE algorithms</a>.</p>
+<p>Estimate the expectation by averaging sampled trajectories. This is Monte Carlo estimation: sampling and empirical averaging are precisely the defining operation. It avoids enumerating exponentially many sequences, but does not promise low variance for every task. Rare rewards, long horizons, and poorly exploring policies can make learning difficult.</p>
+<p>For gradient ascent, update $\theta\leftarrow\theta+\eta\hat g$. In a minimization-oriented autodifferentiation library, use the surrogate loss
+$-\operatorname{stopgrad}(G)\sum_t\log\pi_\theta(A_t\mid S_t)$.
+The stop-gradient instruction treats the measured return as a constant in this estimator. The surrogate's numeric value is not itself an estimate of the expected-return objective.</p>
+<p>The next check enumerates a tiny bandit to verify the score estimator exactly, then compares with a finite-difference derivative. Inputs are finite scalars; the example uses a fixed two-action reward table and no environment interaction.</p>
+<pre><code class="language-python">def bandit_check(theta):
+    p = 1 / (1 + np.exp(-theta))
+    probabilities = np.array([1 - p, p])
+    rewards = np.array([0.0, 2.0])
+    scores = np.array([-p, 1 - p])
+    estimators = rewards * scores
+    mean = probabilities @ estimators
+    variance = probabilities @ (estimators - mean) ** 2
+    return p, mean, variance
+
+
+theta = np.log(1 / 3)
+p, gradient, variance = bandit_check(theta)
+assert np.isclose(p, 0.25)
+assert np.isclose(gradient, 0.375)
+assert np.isclose(variance, 0.421875)
+step = 1e-5
+numerical = (
+    2 / (1 + np.exp(-(theta + step)))
+    - 2 / (1 + np.exp(-(theta - step)))
+) / (2 * step)
+assert np.isclose(gradient, numerical)
+</code></pre>
+<h2 id="limitations-and-the-bridge-to-language-models">Limitations and the bridge to language models</h2>
+<p>The MDP formalizes consequences; the reward defines what counts as success; the policy gradient changes behavior according to observed return. None of these guarantees that the reward captures the real inspection goal. A camera policy rewarded only for sharp images could avoid difficult defects, and a language policy rewarded for confident answers could learn confidence rather than correctness.</p>
+<p>Language generation fits the same framework when a state is a prefix, an action is the next token, and the transition appends that token. The sampled answer can receive a terminal reward. Lecture 20 develops the resulting credit-assignment, variance, and data-reuse questions.</p>
+<h2 id="exercises">Exercises</h2>
+<ol>
+<li>A robot's transition depends on velocity, but its proposed state contains only position. Explain the Markov violation with two histories.</li>
+<li>Under the continuing inspection model, solve for $V_p(U)$ at $p=0.2$. Compare it with the value obtained by inspecting once with probability $0.2$ and otherwise never inspecting.</li>
+<li>Prove the potential-shaping telescoping identity for a finite horizon $H$. State the extra condition needed to preserve all policy rankings.</li>
+<li>In a one-state continuing MDP with reward $3$ and $\gamma=0.8$, compute value. If a candidate value has Bellman residual at most $0.02$, bound its error.</li>
+<li>For the two-action bandit, change rewards to $r_0=1,r_1=3$. Compute the exact gradient at $p=1/4$, and explain why adding a common reward constant leaves the expected gradient unchanged.</li>
+</ol>
+<details>
+<summary>Fully worked solutions</summary>
+<ol>
+<li>Two histories can end at the same position with opposite velocities. The same control action then gives different next-position distributions. Conditioning only on the proposed state and action loses information present in history, violating the displayed Markov equality. Adding velocity is a possible repair, provided no other omitted variable still affects transitions.</li>
+<li>Substitute $p=0.2$ into $13.4p/(0.1+0.9p)$ to obtain $2.68/0.28\approx9.571429$. A one-time random decision gives only $0.2(13.4)=2.68$ because the other branch never tries again. The stationary stochastic policy gets repeated chances, which the Bellman recursion captures.</li>
+<li>Expand $\sum_{t=0}^{H-1}\gamma^t[\gamma\Phi(S_{t+1})-\Phi(S_t)]$. Interior terms cancel, leaving $-\Phi(S_0)+\gamma^H\Phi(S_H)$. A zero terminal potential, or another terminal contribution independent of policy under the evaluation protocol, removes the policy-dependent remainder. Merely choosing a smooth potential is insufficient.</li>
+<li>Solve $V=3+0.8V$ to get $V=15$. The contraction residual bound gives error at most $0.02/(1-0.8)=0.1$. This illustrates the amplification of residual error by the effective discounted horizon.</li>
+<li>Expected reward is $1+2p$, so its derivative is still $2p(1-p)=0.375$. The added constant contributes $\mathbb E[A-p]=0$ to the score estimator's mean. It can nevertheless change estimator variance, which motivates the baseline analysis in Lecture 20.</li>
+</ol>
+</details>
+<h2 id="primary-sources">Primary sources</h2>
+<ul>
+<li>Williams, <a href="https://doi.org/10.1007/BF00992696">Simple statistical gradient-following algorithms for connectionist reinforcement learning</a>.</li>
+<li>Ng, Harada, and Russell, <a href="https://people.eecs.berkeley.edu/~russell/papers/icml99-shaping.pdf">Policy invariance under reward transformations: Theory and application to reward shaping</a>.</li>
+<li>Sutton and Barto, <a href="https://www.andrew.cmu.edu/course/10-703/textbook/BartoSutton.pdf">Reinforcement Learning: An Introduction, second edition</a>, for the broader MDP and policy-gradient framework.</li>
+</ul><nav class="pager" aria-label="Chapter sequence"><a href="lecture-16.html">Previous ·  Efficient transformers and the difference between prompting and training</a><a href="lecture-20.html">Next ·  Credit assignment, PPO, and reinforcement learning for language models</a></nav></main><aside class="side"><details class="toc" open><summary>On this page</summary><ul><li><a href="#1-a-state-must-summarize-the-information-needed-for-the-future-0718">1. A state must summarize the information needed for the future 07:18</a></li><li><a href="#2-rewards-define-an-objective-not-merely-a-training-hint-1812">2. Rewards define an objective, not merely a training hint 18:12</a></li><li><a href="#3-a-policy-induces-values-for-every-starting-state-3157">3. A policy induces values for every starting state 31:57</a></li><li><a href="#4-bellman-equations-replace-trajectory-enumeration-with-recursion-4316">4. Bellman equations replace trajectory enumeration with recursion 43:16</a></li><li><a href="#5-differentiating-an-expectation-whose-distribution-changes-5539">5. Differentiating an expectation whose distribution changes 55:39</a></li><li><a href="#6-reinforce-removes-the-need-to-differentiate-the-environment-6919">6. REINFORCE removes the need to differentiate the environment 69:19</a></li><li><a href="#limitations-and-the-bridge-to-language-models">Limitations and the bridge to language models</a></li><li><a href="#exercises">Exercises</a></li><li><a href="#primary-sources">Primary sources</a></li></ul></details></aside></div><footer class="shell foot">Independent study edition · Prepared 25 September 2026 · Based on caption tracks and primary research · <a href="source-map.html">Coverage and attribution</a> · Offline mathematics: <a href="assets/mathjax-LICENSE">MathJax license</a></footer></body></html>

@@ -1,0 +1,267 @@
+# Lecture 6 — Bias, variance, regularization, and model selection
+
+Suppose our property service predicts repair cost from a standardized measurement $x$. A straight line may miss real curvature. A high-degree polynomial may pass through every observed cost yet make unstable predictions on new properties. The question is not merely which function fits one dataset. It is how the entire learning procedure behaves when the data are sampled again.
+
+This chapter follows the recording from that thought experiment to the bias–variance identity, ridge regression, modern interpolation phenomena, and practical model selection. The property examples, spectral calculations, code, and exercises are original. The research discussions distinguish what their cited experiments establish from universal claims about generalization. Throughout, squared error is the principal loss; other losses require their own analysis.
+
+## 1. The learned function is itself random [03:00](https://www.youtube.com/watch?v=llnEgyyuYkQ&t=180s)
+
+Let $S=\{(X_i,Y_i)\}_{i=1}^n$ be a random training sample and let a learning algorithm return the function $\hat f_S$. Even when its code is deterministic, the fitted function is random because its input dataset is random. If training also uses random initialization or minibatch order, include that randomness in the procedure's probability space.
+
+For a concrete population, take $X$ uniformly distributed on $[-1,1]$ and
+
+$$Y=f_*(X)+\epsilon,\qquad f_*(x)=x^2,\qquad
+\mathbb E[\epsilon\mid X]=0.$$
+
+The target $f_*(x)=\mathbb E[Y\mid X=x]$ is the best squared-error predictor using the available features. It need not be a deterministic law of nature; omitted variables and measurement noise can remain in $\epsilon$.
+
+If our hypothesis class consists of lines $a+bx$, no amount of data allows a member of that class to equal $x^2$ everywhere on the interval. The best population line satisfies the normal equations
+
+$$\mathbb E[X^2-a-bX]=0,\qquad
+\mathbb E[X(X^2-a-bX)]=0.$$
+
+Symmetry gives $\mathbb E[X]=\mathbb E[X^3]=0$ and $\mathbb E[X^2]=1/3$, hence $a=1/3$ and $b=0$. The line is not the quadratic with its quadratic coefficient deleted; its intercept adjusts to minimize population error. The integrated approximation error is
+
+$$\mathbb E[(X^2-1/3)^2]=\frac15-\frac19=\frac4{45}.$$
+
+This is an explicit underfitting example. A larger quadratic class contains the target, but finite-sample estimation still introduces error. Conversely, a sufficiently flexible class can interpolate the observations: $\hat f_S(X_i)=Y_i$ for every training point. Interpolation says what happens on the observed inputs. It says nothing by itself about unseen inputs.
+
+### Capacity and the fitting rule must be discussed together
+
+For distinct one-dimensional inputs, a polynomial of degree at most $n-1$ can interpolate $n$ labels. Adding still higher-degree terms creates multiple interpolating functions. A regularizer or optimizer then selects among them. Two algorithms using the same broad function class can therefore have very different sensitivity to data.
+
+This distinction will become central to double descent. “Number of parameters” is a useful experimental axis, but it does not completely characterize effective complexity. Feature scaling, norm constraints, architecture, initialization, and optimization can change which function is chosen.
+
+Training and validation errors are practical diagnostics, not direct measurements of mathematical bias and variance. High training error can reflect approximation limits, optimization failure, corrupted labels, or an unsuitable loss. A large training–validation gap may suggest overfitting, but distribution shift can also create it. Bias and variance are defined by repeated sampling; one split provides only indirect evidence about them.
+
+## 2. Deriving the bias–variance–noise identity [20:00](https://www.youtube.com/watch?v=llnEgyyuYkQ&t=1200s)
+
+Fix a test input $x$. Draw a fresh test response $Y=f_*(x)+\epsilon$ independently of the training procedure conditional on $x$. Assume $\mathbb E[\epsilon\mid x]=0$, $\operatorname{Var}(\epsilon\mid x)=\sigma^2(x)$, and finite second moments for both the noise and $\hat f_S(x)$.
+
+Define the average prediction
+
+$$\bar f(x)=\mathbb E_S[\hat f_S(x)].$$
+
+This means averaging predictions from separately trained models across possible training samples. It is not the model obtained by averaging datasets before training, nor generally the result of training once on an infinite union of data.
+
+Expand the test error:
+
+$$\mathbb E_{S,\epsilon}[(Y-\hat f_S(x))^2]
+=\sigma^2(x)+\mathbb E_S[(f_*(x)-\hat f_S(x))^2].$$
+
+The cross-term vanishes because the fresh test noise has conditional mean zero and is independent of the fitted model. Next add and subtract $\bar f(x)$:
+
+$$f_*(x)-\hat f_S(x)
+=[f_*(x)-\bar f(x)]+[\bar f(x)-\hat f_S(x)].$$
+
+The second bracket has expectation zero by definition. Squaring and taking expectations therefore gives
+
+$$\boxed{\mathbb E[(Y-\hat f_S(x))^2]
+=\underbrace{(\bar f(x)-f_*(x))^2}_{\text{squared bias}}
++\underbrace{\mathbb E_S[(\hat f_S(x)-\bar f(x))^2]}_{\text{variance}}
++\underbrace{\sigma^2(x)}_{\text{test noise}}.}$$
+
+Gaussian noise was useful in earlier likelihood derivations, but is unnecessary for this identity. Zero conditional mean, the fresh-test independence condition, and finite second moments suffice. Likewise, the learning procedure need not be linear, unbiased, or capable of representing $f_*$.
+
+The bias is a property of the entire estimator at the specified sample size. It is not exclusively a property of the hypothesis class. Ridge regression introduces bias even when the true function lies in the linear class. A biased initialization or an early stopping rule can also affect the expected predictor.
+
+For an exact numerical illustration, suppose the target at one input is 10, the test-noise variance is 4, and the fitted procedure predicts 8 or 12 with equal probabilities across training samples. Its bias is zero, its variance is 4, and its expected test squared error is 8. A different procedure always predicting 9 has squared bias 1, variance zero, and test error 5. Deliberately introducing some bias can improve prediction.
+
+The first model's errors relative to the noiseless target average to 4. Adding the independent test-noise contribution gives 8. This distinction prevents a common mistake: evaluating against $f_*(x)$ omits the irreducible response noise that appears when evaluating against a newly observed $Y$.
+
+### What the identity does and does not predict
+
+Integrating over the deployment input distribution gives a population-risk decomposition. If the deployment distribution changes, that integration changes. If the conditional response law also changes, the target and noise terms change too.
+
+The identity does not prove that bias decreases monotonically with parameter count, that variance increases monotonically, or that test error has exactly one minimum. Those are additional descriptions of particular model families and fitting procedures. They should not be mistaken for consequences of expanding a square.
+
+For binary outcomes, the same squared-error identity applies to numerical probability predictions under Brier loss. It is not automatically an identity for zero-one classification error or cross entropy. Different losses admit different decompositions. Keeping the loss explicit prevents an intuitive regression picture from being promoted into a false universal theorem.
+
+## 3. Ridge regression makes the tradeoff visible in each direction [42:00](https://www.youtube.com/watch?v=llnEgyyuYkQ&t=2520s)
+
+Let $X\in\mathbb R^{n\times d}$ be a fixed design matrix, $y\in\mathbb R^n$ the response vector, and $\theta\in\mathbb R^d$ the coefficients. Define ridge regression by the objective
+
+$$J_\lambda(\theta)=\frac12\|y-X\theta\|^2
++\frac\lambda2\|\theta\|^2,\qquad \lambda>0.$$
+
+This convention uses a sum of squared residuals. If the residual term is divided by $n$, the numerical regularization parameter must be rescaled accordingly. Comparing parameter values without comparing objective conventions is meaningless.
+
+Differentiating yields
+
+$$\nabla J_\lambda=X^\top(X\theta-y)+\lambda\theta,$$
+
+so the unique optimum satisfies
+
+$$(X^\top X+\lambda I)\hat\theta_\lambda=X^\top y.$$
+
+Every eigenvalue of $X^\top X$ is nonnegative. Adding $\lambda I$ makes all eigenvalues positive and ensures uniqueness, including when $d>n$. In computation, solve this system rather than explicitly forming its inverse; an augmented least-squares formulation can also avoid squaring the design's condition number.
+
+### Null-space ambiguity and minimum norm
+
+Write $\theta=\theta_{\rm row}+v$, where $\theta_{\rm row}$ belongs to the row space of $X$ and $v$ belongs to its null space. These spaces are orthogonal. Since $Xv=0$, the data fit depends only on $\theta_{\rm row}$, while
+
+$$\|\theta\|^2=\|\theta_{\rm row}\|^2+\|v\|^2.$$
+
+The optimal ridge solution therefore has $v=0$. But for positive $\lambda$, ridge does more than select a minimum-norm interpolator: it also shrinks the row-space component and generally stops interpolating. The minimum-norm least-squares solution is recovered in the limit $\lambda\downarrow0$.
+
+Now suppose the fixed-design data obey $y=X\theta_*+\epsilon$, with $\mathbb E[\epsilon]=0$ and $\operatorname{Cov}(\epsilon)=\sigma^2I$. Let $v_j$ be an eigenvector of $X^\top X$ with eigenvalue $a_j\ge0$, and write $\theta_{*,j}=v_j^\top\theta_*$. Along a direction with $a_j>0$,
+
+$$\mathbb E[\hat\theta_{\lambda,j}]
+=\frac{a_j}{a_j+\lambda}\theta_{*,j},\qquad
+\operatorname{Bias}(\hat\theta_{\lambda,j})
+=-\frac{\lambda}{a_j+\lambda}\theta_{*,j},$$
+
+$$\operatorname{Var}(\hat\theta_{\lambda,j})
+=\frac{\sigma^2a_j}{(a_j+\lambda)^2}.$$
+
+For ordinary least squares, the variance is $\sigma^2/a_j$. Weakly observed directions with small $a_j$ amplify noise. Ridge reduces that amplification but moves the mean estimate toward zero. At $a_j=0$, the data contain no information about that coefficient; ridge returns zero in that direction.
+
+Take $\sigma^2=1$, $a_j=0.01$, $\theta_{*,j}=1$, and $\lambda=0.1$. Ordinary least squares has coefficient mean-squared error 100. Ridge has squared bias $(0.1/0.11)^2\approx0.8264$ and variance $0.01/0.11^2\approx0.8264$, giving total error about 1.6529. The numerical win comes from a weak signal direction and a moderate true coefficient. If the true coefficient were enormous, the same shrinkage could be harmful.
+
+Coefficient error is not identical to prediction error. At a new input $x$, prediction bias is $x^\top(\mathbb E\hat\theta-\theta_*)$ and prediction variance is $x^\top\operatorname{Cov}(\hat\theta)x$. Deployment inputs determine which coefficient directions matter. A large error in a direction never used at deployment may contribute little predictive risk.
+
+### A Bayesian interpretation with the scaling exposed
+
+With Gaussian observation noise of variance $\sigma^2$ and a prior $\theta\sim\mathcal N(0,\tau^2I)$, the negative log posterior is, up to constants,
+
+$$\frac{1}{2\sigma^2}\|y-X\theta\|^2
++\frac{1}{2\tau^2}\|\theta\|^2.$$
+
+Multiplying by $\sigma^2$ gives ridge with $\lambda=\sigma^2/\tau^2$. The posterior mode equals the posterior mean in this Gaussian model. This derives one meaning of the penalty strength; it does not mean that an arbitrary tuned ridge penalty has been calibrated as a literal prior belief.
+
+Feature scale matters. Replacing one feature by 100 times itself divides its unpenalized coefficient by 100 while leaving predictions unchanged. The isotropic coefficient penalty changes, so the ridge fit can change. Centering and scaling must be learned from training data and then applied unchanged to validation and test data.
+
+The implementation below handles an unpenalized intercept by centering the design and response. It accepts a finite matrix, matching labels, and positive penalty; it returns an intercept and coefficient vector without changing inputs or writing files. It intentionally does not standardize features, making that separate preprocessing decision visible.
+
+```python
+import numpy as np
+
+
+def ridge_fit(x, y, penalty):
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if x.ndim != 2 or y.shape != (x.shape[0],) or not x.shape[0]:
+        raise ValueError("Expected a nonempty design and matching labels")
+    if not np.isfinite(x).all() or not np.isfinite(y).all():
+        raise ValueError("Data must be finite")
+    if not np.isfinite(penalty) or penalty <= 0:
+        raise ValueError("Penalty must be finite and positive")
+    x_mean, y_mean = x.mean(axis=0), y.mean()
+    centered = x - x_mean
+    system = centered.T @ centered + penalty * np.eye(x.shape[1])
+    weight = np.linalg.solve(system, centered.T @ (y - y_mean))
+    return float(y_mean - x_mean @ weight), weight
+
+
+x = np.array([[-1.0], [0.0], [1.0]])
+y = np.array([-1.0, 1.0, 3.0])
+intercept, weight = ridge_fit(x, y, 2.0)
+assert np.isclose(intercept, 1)
+assert np.allclose(weight, [1])
+assert np.allclose((x.T @ x + 2 * np.eye(1)) @ weight,
+                   x.T @ (y - y.mean()))
+```
+
+Here the unregularized line is $1+2x$, and a penalty of 2 halves its slope while preserving the intercept. As the penalty tends to infinity, this implementation predicts the training mean, not zero, because the intercept is unpenalized.
+
+## 4. Regularization beyond an isotropic coefficient penalty [58:00](https://www.youtube.com/watch?v=llnEgyyuYkQ&t=3480s)
+
+The recording broadens regularization to methods that discourage fragile fits, including dropout and data augmentation. Their mathematical effects depend on the model and objective. They should not all be identified with the same $\lambda\|\theta\|^2$ penalty.
+
+For a simple exact calculation, consider a linear prediction $w^\top x$ with independent inverted-dropout multipliers $m_j$, where $m_j=1/q$ with probability $q$ and zero otherwise. Then $\mathbb E[m_j]=1$ and $\operatorname{Var}(m_j)=(1-q)/q$. For one squared-error observation,
+
+$$\mathbb E_m[(y-\sum_jw_jm_jx_j)^2]
+=(y-w^\top x)^2+\frac{1-q}{q}\sum_jw_j^2x_j^2.$$
+
+The cross-terms vanish because the multipliers are independent and centered after subtracting one. Averaging over data produces a feature-dependent quadratic penalty. This is an exact identity for this linear squared-loss setup, not a general identity for nonlinear networks. [Wager, Wang, and Liang](https://arxiv.org/abs/1307.1493) study dropout as adaptive regularization in a broader statistical setting.
+
+Ordinary gradient descent on an L2-penalized objective updates
+
+$$w_{t+1}=(1-\alpha\lambda)w_t-\alpha\nabla L(w_t).$$
+
+Thus L2 regularization and multiplicative weight decay coincide under this simple update convention. With adaptive coordinate scaling, inserting $\lambda w$ into the gradient causes the optimizer to scale the penalty along with the data gradient. Decoupled weight decay applies the shrinkage separately. [Loshchilov and Hutter](https://arxiv.org/abs/1711.05101) make this distinction explicit; one should not assume the two operations are interchangeable for Adam.
+
+Data augmentation instead specifies transformations expected to preserve the target. Rotating an image slightly may preserve “cat,” but rotating a digit by 180 degrees can change “6” into “9.” For property inspection, deleting the word “no” from “no crack” destroys the label-preserving assumption. An augmentation policy is a substantive claim about the task's invariances.
+
+Normalization layers can improve optimization and interact with regularization, but they are not simply synonymous with statistical variance reduction. The next lecture develops their actual computation. A useful experimental discipline is to change one mechanism at a time and evaluate both fitting behavior and held-out performance.
+
+## 5. Double descent and benchmark reuse qualify the classical picture [62:00](https://www.youtube.com/watch?v=llnEgyyuYkQ&t=3720s)
+
+The classical U-shaped test-error curve describes many regimes: increasing complexity first reduces approximation error, then increases sensitivity to noise. Modern overparameterized models can exhibit a second decline in test error beyond the interpolation threshold. [Belkin and colleagues](https://arxiv.org/abs/1812.11118) call this pattern double descent and discuss how it reconciles aspects of modern practice with classical generalization ideas.
+
+There is no contradiction with the bias–variance identity. The identity never required estimator variance to increase monotonically with model size. Beyond interpolation, many zero-training-error solutions may exist, and the fitting rule can select a solution with favorable geometry. The research result is a phenomenon in studied settings, not a guarantee that making any model larger improves generalization.
+
+A small linear example reveals the role of selection. With $X=(1,1)$ and a single noiseless label $y=1$, every pair satisfying $\theta_1+\theta_2=1$ interpolates. The minimum-norm solution is $(1/2,1/2)$. The pair $(100,-99)$ also interpolates. At a new input $(1,0)$, their predictions are $1/2$ and 100. Training error cannot distinguish them; the norm preference can.
+
+This example does not prove double descent. It isolates the logical possibility that overparameterization plus a selection rule can behave better than an arbitrary interpolator. Proving population generalization requires assumptions about the data distribution and the alignment of signal, noise, and feature geometry.
+
+The second modern example concerns repeated community use of a benchmark. [Recht and colleagues' ImageNet replication study](https://arxiv.org/abs/1902.10811) found substantial accuracy drops on newly collected test data, while performance across models remained strongly related to original ImageNet performance. The carefully stated conclusion is that the study did not support adaptive benchmark overfitting as the sole explanation for the observed behavior. It does not establish that all rankings are exactly preserved, that every model loses exactly the same number of points, or that test-set reuse is harmless.
+
+For our service, repeatedly choosing features after inspecting the same held-out buildings can bias the reported score. A new region may additionally introduce real distribution shift. These are distinct mechanisms and can coexist. A robust evaluation should record which data informed decisions and reserve genuinely fresh observations for final assessment.
+
+## 6. Selecting models without spending all the data or compute [71:00](https://www.youtube.com/watch?v=llnEgyyuYkQ&t=4260s)
+
+Parameters such as regression coefficients are fitted inside a training run. Hyperparameters such as polynomial degree, ridge strength, or training duration select the procedure used for that run. Training error favors flexibility, so it is generally unsuitable as the sole criterion for choosing among these procedures.
+
+In a train–validation–test workflow, fit parameters on training data, select hyperparameters using validation data, then report a final evaluation on the test set. The final test set must not repeatedly guide revisions while still being described as untouched. A validation set estimates performance noisily, and searching many alternatives can overfit that noise too.
+
+In $K$-fold cross-validation, partition the development data into $K$ disjoint folds. For each candidate hyperparameter, train $K$ times, each time holding out a different fold, and aggregate the held-out losses. After selecting the candidate, refit it on all development data. The folds reuse data efficiently, but the trained models are correlated, and their average score is not equivalent to $K$ independent experiments.
+
+All learned preprocessing belongs inside each fold. Fitting a scaler or choosing features once using the full dataset leaks held-out information into training. For repeated measurements of the same property, split by property rather than by row. For predicting future maintenance costs, a time-respecting split may be more faithful than a random one. The split must match the deployment question.
+
+### Successive halving and Hyperband
+
+The recording's resource-allocation animation is successive halving: train many candidate configurations briefly, discard the worst fraction, and give survivors more resources. [Hyperband](https://arxiv.org/abs/1603.06560) combines such schedules with different initial resource allocations. A single halving bracket is not the entire Hyperband algorithm.
+
+For a concrete cumulative-budget schedule, start eight candidates at one unit each, keep four and extend them to two units, keep two and extend them to four units, and keep one and extend it to eight units. Continuing previous training costs
+
+$$8(1)+4(2-1)+2(4-2)+1(8-4)=20$$
+
+units, compared with $8\cdot8=64$ to train every candidate to the final budget. Restarting each round would cost 32 units instead. The difference depends on whether checkpoints are continued and whether the stated budgets are cumulative or additional; those conventions must be explicit.
+
+```python
+survivors = [8, 4, 2, 1]
+cumulative_budget = [1, 2, 4, 8]
+continued_cost = sum(
+    count * (budget - previous)
+    for count, budget, previous in zip(
+        survivors, cumulative_budget, [0] + cumulative_budget[:-1]
+    )
+)
+restarted_cost = sum(
+    count * budget for count, budget in zip(survivors, cumulative_budget)
+)
+assert continued_cost == 20
+assert restarted_cost == 32
+assert survivors[0] * cumulative_budget[-1] == 64
+```
+
+Early performance must contain useful information about later performance for aggressive pruning to work well. A slowly improving candidate can be discarded before it becomes the best. Warm-up schedules, different architectures, and noisy validation scores can all distort early rankings. Hyperband's multiple brackets help explore resource-allocation choices; they do not make early scores infallible.
+
+For the repair-cost service, a sensible first experiment is a small degree–penalty grid with consistent folds and a fixed metric. Sophisticated search becomes useful when individual fits are expensive enough that resource allocation matters. The statistical protocol comes first; faster search through a leaky evaluation procedure only produces a biased conclusion sooner.
+
+## Exercises
+
+1. **Derive.** Reproduce the fixed-input bias–variance identity without assuming Gaussian noise. State exactly which cross-terms vanish and why.
+2. **Compute.** An estimator predicts 6 or 10 with equal probability at a point whose true conditional mean is 9 and noise variance is 2. Compute bias, variance, and expected test squared error. Compare with always predicting 8.
+3. **Derive.** In a fixed-design ridge direction with eigenvalue $a>0$, derive coefficient mean-squared error and show that its minimizing penalty is $\lambda=\sigma^2/\theta_*^2$ when $\theta_*\ne0$. Explain why this does not supply a universal practical tuning constant.
+4. **Counterexample.** Two configurations have validation losses $(0.8,0.7,0.6)$ and $(1.0,0.5,0.2)$ at budgets 1, 2, and 4. Explain how halving after budget 1 can fail. Distinguish this failure from test-set leakage.
+5. **Design.** You have ten years of repeated inspections from the same buildings. Design a model-selection protocol for predicting next year's repair costs, including preprocessing, hyperparameters, and the final score.
+
+<details><summary>Solutions</summary>
+
+1. Write $Y=f_*(x)+\epsilon$. The term $\mathbb E[\epsilon(f_*(x)-\hat f_S(x))]$ is zero because the test noise has conditional mean zero and is independent of the trained model at fixed $x$. In the remaining square, add and subtract $\bar f(x)$. The second cross-term is $(f_*(x)-\bar f(x))\mathbb E[\bar f(x)-\hat f_S(x)]=0$ by the definition of the mean predictor. Finite second moments justify the expectations. No Gaussian density or linear hypothesis is required.
+
+2. The mean prediction is 8, so bias is $8-9=-1$ and squared bias is 1. Variance is $[(6-8)^2+(10-8)^2]/2=4$. Test error is $1+4+2=7$. Always predicting 8 has the same bias but zero estimator variance, giving error 3. Neither estimator can eliminate the fresh response noise with the same observed features.
+
+3. The mean-squared error is $(\lambda^2\theta_*^2+\sigma^2a)/(a+\lambda)^2$. Its derivative is $2a(\lambda\theta_*^2-\sigma^2)/(a+\lambda)^3$, so the optimum is $\sigma^2/\theta_*^2$. If $\theta_*=0$, larger shrinkage monotonically removes variance and the optimum is approached as $\lambda$ tends to infinity. In practice, the signal coordinates and noise scale are unknown, different directions prefer different penalties, and prediction risk weights directions through deployment inputs. Objective normalization also changes the numerical parameter.
+
+4. At budget 1 the first configuration appears better, so pruning the worse half removes the second. By budget 4, the removed candidate would have loss 0.2 versus 0.6. This is an early-ranking failure under limited compute, even if the validation set is used correctly. Test leakage is a separate failure in which information from the supposedly final evaluation influences selection. One can suffer either problem without the other.
+
+5. Use earlier years to train and later development periods to validate, preserving the timing of every feature. Keep the latest year untouched for a final temporal evaluation. If deployment includes entirely new buildings, also evaluate held-out-building generalization; if it concerns existing buildings, historical measurements may be valid inputs but future measurements are not. Fit scaling, imputations, and feature selection inside each training window. Select degree, penalty, and stopping rules on development windows, then refit according to a predeclared procedure and evaluate once on the final year. Report sample counts, uncertainty, and performance by relevant building groups as well as the aggregate metric.
+
+</details>
+
+## Primary references and evidence boundaries
+
+The [recording](https://www.youtube.com/watch?v=llnEgyyuYkQ) supplies the conceptual sequence. The ridge and risk derivations are explicit mathematical developments of that material. Research extensions use [Wager et al. on dropout](https://arxiv.org/abs/1307.1493), [Loshchilov and Hutter on decoupled weight decay](https://arxiv.org/abs/1711.05101), [Belkin et al. on double descent](https://arxiv.org/abs/1812.11118), [Recht et al. on ImageNet replication](https://arxiv.org/abs/1902.10811), and [Li et al. on Hyperband](https://arxiv.org/abs/1603.06560). The numerical examples and resource accounting are independently constructed, not reported experimental results from those papers.

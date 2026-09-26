@@ -1,0 +1,237 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; object-src 'none'"><meta name="description" content="Independent transcript-grounded CS229 study notes with mathematical derivations, timestamped recordings, exercises and primary references."><title>Lecture 11 — Diffusion models: forward noise, reverse dynamics, and a trajectory ELBO | CS229 study notes</title><link rel="stylesheet" href="assets/notes.css"><script src="assets/math-config.js"></script><script defer src="assets/mathjax-tex-svg.js"></script><script defer src="assets/notes.js"></script></head><body><a class="skip" href="#main">Skip to content</a><header class="top"><div class="shell"><a class="brand" href="index.html">CS229 / STUDY NOTES</a><nav aria-label="Course navigation"><a href="index.html#chapters">Chapters</a><a href="source-map.html">Source map</a><a href="study-guide.html">Study guide</a></nav></div></header><div class="shell layout"><main id="main"><div class="label">CS229 · Spring 2026 · approximately 3,598 words</div><h1 id="lecture-11-diffusion-models-forward-noise-reverse-dynamics-and-a-trajectory-elbo">Lecture 11 — Diffusion models: forward noise, reverse dynamics, and a trajectory ELBO</h1><section class="source meta" aria-label="Source provenance"><p><b>Recording:</b> <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI">Stanford CS229 Machine Learning | Spring 2026 | Lecture 11: Diffusion Models</a> · 82:31</p><p>English caption track marked non-automatic by YouTube · 1,523 timed segments · Retrieved 25 September 2026.</p><p>Timestamp links locate relevant discussion windows. Definitions and derivations are reconstructed; worked examples and exercises are original unless attributed. Research additions are labeled. Slide images were not comprehensively reviewed. <a href="source-map.html#lecture-11">See the section-level source map.</a></p></section><div class="toolrow"><button id="solutions" type="button">Show solutions</button><button id="print" type="button">Print / save PDF</button><a href="lecture-11.md">Editable Markdown</a></div><nav class="pager" aria-label="Chapter sequence"><a href="lecture-10.html">Previous ·  Expectation–maximization and principal component analysis</a><a href="lecture-12.html">Next ·  Learning to denoise, then learning to adapt</a></nav>
+<p>Suppose the property service wants a model of inspection images, rather than a classifier of predefined defects. The statistical objective is to learn a distribution from which new images can be sampled. A diffusion model approaches this by defining an easy corruption process and learning many small reverse transitions.</p>
+<p>The recording develops the noising process, its Gaussian marginal, reverse-time intuition, a continuous-time connection, and a variational training objective. This chapter follows that order. A scalar sensor model carries the numerical calculations so every coefficient can be checked before interpreting the same equations in image space. Research extensions are linked to primary papers; broad claims about which architecture currently dominates an application are not needed for the derivation.</p>
+<h2 id="1-a-generative-model-specifies-a-distribution-not-one-reconstruction-0000">1. A generative model specifies a distribution, not one reconstruction <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI&amp;t=0s">00:00</a></h2>
+<p>Let $X_0\in\mathbb R^d$ follow the data distribution $q_{\rm data}$. Training provides samples from this distribution. The desired model is a distribution $p_\theta(X_0)$ that can generate new observations with appropriate structure.</p>
+<p>The subscript 0 labels the clean endpoint. Increasing time indices mean more corruption. The learned sampler will start at a large index $T$ and move toward 0. These indices describe a designed stochastic process, not the chronological age of the image.</p>
+<p>Choose a noise schedule $\beta_1,\ldots,\beta_T$ with $0&lt;\beta_t&lt;1$. Define independent standard normal innovations $\epsilon_t\sim\mathcal N(0,I_d)$, independent of $X_0$, and the forward recursion</p>
+<p>$$X_t=\sqrt{1-\beta_t}\,X_{t-1}
++\sqrt{\beta_t}\,\epsilon_t.$$</p>
+<p>Equivalently, its transition density is</p>
+<p>$$q(x_t\mid x_{t-1})
+=\mathcal N(x_t;\sqrt{1-\beta_t}\,x_{t-1},\beta_tI_d).$$</p>
+<p>The notation $\mathcal N(x;\mu,\Sigma)$ denotes a density evaluated at $x$; $\mathcal N(\mu,\Sigma)$ denotes the distribution itself. This distinction is useful when multiplying densities or taking their logarithms.</p>
+<p>The square roots are essential. The coefficients multiply random vectors, so their squares determine covariance contributions. The recording corrects missing square roots during the derivation; we use the consistent variance convention throughout.</p>
+<p>The forward process is fixed by design. In this formulation its schedule and transition rule are not learned neural networks. Learning concerns the reverse model. The term “denoising” should not imply that the model deterministically retrieves a unique original image from pure noise. It samples a plausible predecessor distribution at each stage.</p>
+<h3 id="why-the-process-shrinks-the-signal-while-adding-noise">Why the process shrinks the signal while adding noise</h3>
+<p>Let $\alpha_t=1-\beta_t$. Independence gives</p>
+<p>$$\mathbb E[X_t]=\sqrt{\alpha_t}\,\mathbb E[X_{t-1}],$$</p>
+<p>$$\operatorname{Cov}(X_t)
+=\alpha_t\operatorname{Cov}(X_{t-1})+\beta_tI_d.$$</p>
+<p>If the initial covariance is identity, every later covariance is identity. Otherwise, each step moves covariance toward identity. This is why the construction is called variance-preserving in a standard diffusion convention: it avoids the unbounded variance growth of repeatedly adding noise without signal attenuation.</p>
+<p>Identity covariance does not imply a Gaussian distribution. A vector can be non-Gaussian despite zero mean and identity covariance. The approach to a Gaussian comes from the explicit marginal formula developed next, not from covariance alone.</p>
+<p>For the image application, this forward process is a training device. It is not a physical model claiming that a real camera repeatedly shrinks pixel values and injects independent Gaussian noise. Its usefulness comes from creating analytically manageable corrupted versions of the training data.</p>
+<h2 id="2-unrolling-the-chain-gives-direct-sampling-at-any-noise-level-1400">2. Unrolling the chain gives direct sampling at any noise level <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI&amp;t=840s">14:00</a></h2>
+<p>Define the cumulative signal factor</p>
+<p>$$\bar\alpha_t=\prod_{s=1}^t\alpha_s,\qquad \bar\alpha_0=1.$$</p>
+<p>Unrolling the recursion gives</p>
+<p>$$X_t=\sqrt{\bar\alpha_t}\,X_0+
+\sum_{s=1}^t\sqrt{\beta_s\prod_{r=s+1}^t\alpha_r}\,\epsilon_s.$$</p>
+<p>The second term is Gaussian because it is a linear combination of independent Gaussian vectors. Its covariance is the sum of the squared coefficients. That sum telescopes:</p>
+<p>$$\sum_{s=1}^t\beta_s\prod_{r=s+1}^t\alpha_r
+=\sum_{s=1}^t
+\left(\prod_{r=s+1}^t\alpha_r-\prod_{r=s}^t\alpha_r\right)
+=1-\bar\alpha_t.$$</p>
+<p>Consequently,</p>
+<p>$$\boxed{q(x_t\mid x_0)=
+\mathcal N(x_t;\sqrt{\bar\alpha_t}\,x_0,
+(1-\bar\alpha_t)I_d).}$$</p>
+<p>For a chosen time, we can sample directly as</p>
+<p>$$X_t=\sqrt{\bar\alpha_t}\,X_0+
+\sqrt{1-\bar\alpha_t}\,\epsilon,\qquad
+\epsilon\sim\mathcal N(0,I_d).$$</p>
+<p>This avoids simulating all preceding steps when constructing a training example. It will make the noise-prediction objective in Lecture 12 efficient.</p>
+<p>For a scalar sensor, take $\beta_1=0.1$, $\beta_2=0.2$, and clean value $x_0=2$. Then $\bar\alpha_2=0.9(0.8)=0.72$, so</p>
+<p>$$X_2\mid X_0=2\sim
+\mathcal N(2\sqrt{0.72},0.28).$$</p>
+<p>The conditional mean is about 1.69706 and conditional variance is 0.28. Expanding the two-step recursion gives noise $\sqrt{0.08}\epsilon_1+\sqrt{0.2}\epsilon_2$, whose variance is $0.08+0.2=0.28$. The direct and sequential constructions agree for this marginal.</p>
+<h3 id="a-marginal-construction-is-not-automatically-a-trajectory-construction">A marginal construction is not automatically a trajectory construction</h3>
+<p>The effective noises at two different times along the same forward trajectory share innovations. They are correlated. Drawing an independent fresh $\epsilon$ in the direct formula for each time gives correct individual marginals but generally the wrong joint trajectory.</p>
+<p>In the two-step example, write the first effective noise as $\epsilon_1$ and the second as</p>
+<p>$$\hat\epsilon_2=
+\frac{\sqrt{0.08}\epsilon_1+\sqrt{0.2}\epsilon_2}{\sqrt{0.28}}.$$</p>
+<p>Their correlation is $\sqrt{0.08/0.28}=\sqrt{2/7}\approx0.5345$. This does not matter for an objective sampling one time at a time, but it matters for joint path calculations and for interpreting reverse transitions.</p>
+<p>The marginal formula also gives</p>
+<p>$$\operatorname{Cov}(X_t)
+=\bar\alpha_t\operatorname{Cov}(X_0)
++(1-\bar\alpha_t)I_d.$$</p>
+<p>As $\bar\alpha_t\to0$, the signal contribution vanishes and the marginal approaches the standard normal under ordinary finiteness conditions. At a finite terminal time, this is an approximation unless the data distribution has a special matching form.</p>
+<p>The product of numbers below one does not automatically tend to zero. For example, if $\beta_t=1/(t+1)^2$, then</p>
+<p>$$\bar\alpha_T=\prod_{t=1}^T
+\frac{t(t+2)}{(t+1)^2}
+=\frac{T+2}{2(T+1)}\longrightarrow\frac12.$$</p>
+<p>That schedule never removes all signal. An exact condition for the product to vanish is $\sum_t-\log(1-\beta_t)=\infty$; the usual small-step intuition is a sufficiently large accumulated noise budget. A finite schedule should be checked through its actual terminal signal-to-noise level.</p>
+<h2 id="3-the-reverse-conditional-contains-uncertainty-about-the-past-2800">3. The reverse conditional contains uncertainty about the past <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI&amp;t=1680s">28:00</a></h2>
+<p>The full forward joint distribution is</p>
+<p>$$q(x_{0:T})=q_{\rm data}(x_0)
+\prod_{t=1}^Tq(x_t\mid x_{t-1}).$$</p>
+<p>It induces a reverse conditional $q(x_{t-1}\mid x_t)$. Knowing $x_t$ does not reveal which previous state and innovation produced it. Reversal is therefore a conditional-distribution problem, not algebraic subtraction of known noise.</p>
+<p>A learned generative chain uses a simple terminal prior and parameterized reverse transitions:</p>
+<p>$$p_\theta(x_{0:T})=p(x_T)
+\prod_{t=1}^Tp_\theta(x_{t-1}\mid x_t),\qquad
+p(x_T)=\mathcal N(x_T;0,I_d),$$</p>
+<p>$$p_\theta(x_{t-1}\mid x_t)=
+\mathcal N(x_{t-1};\mu_\theta(x_t,t),\sigma_t^2I_d).$$</p>
+<p>Here $\mu_\theta$ is a neural network that receives both the noisy observation and its time or noise level. For this chapter, $\sigma_t^2$ is a chosen variance. Later variants can learn or otherwise change that parameterization.</p>
+<p>At sampling time, a reverse step can be written</p>
+<p>$$X_{t-1}=\mu_\theta(X_t,t)+\sigma_t\xi_t,$$</p>
+<p>with a new Gaussian draw $\xi_t$. Adding random noise during a denoising step is not contradictory: the mean moves the sample according to a learned conditional distribution, while the variance expresses unresolved uncertainty about the previous state.</p>
+<h3 id="forward-gaussian-noise-does-not-make-every-finite-reverse-conditional-gaussian">Forward Gaussian noise does not make every finite reverse conditional Gaussian</h3>
+<p>Suppose the clean scalar $X_0$ is equally likely to be $-2$ or 2. After one Gaussian corruption, the noisy observation has a mixture density. Conditional on a noisy value, $X_0$ still has two possible discrete values with posterior weights. Its reverse conditional is not a single Gaussian.</p>
+<p>At later finite times, a multimodal data distribution can likewise induce non-Gaussian reverse conditionals. Gaussian reverse kernels are a model choice and a useful small-step approximation. The continuous-time diffusion theory motivates local Gaussian increments under suitable assumptions; it does not say that arbitrary finite-time transitions or arbitrary stochastic processes are Gaussian.</p>
+<p>If a single forward step erased the entire image, its reverse conditional would need to represent the entire complex data distribution at once. Many small corruptions create a sequence of more local inference tasks. This is a useful explanation for the construction, not a proof that any schedule or neural architecture will learn successfully.</p>
+<p><a href="https://arxiv.org/abs/2006.11239">Ho, Jain, and Abbeel's DDPM paper</a> develops the discrete diffusion formulation and a practical training parameterization. The equations here isolate the probabilistic structure before choosing the network architecture.</p>
+<h2 id="4-reverse-time-sdes-explain-the-role-of-the-score-4300">4. Reverse-time SDEs explain the role of the score <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI&amp;t=2580s">43:00</a></h2>
+<p>For a continuous-time connection, consider the stochastic differential equation</p>
+<p>$$dX_t=f(X_t,t)\,dt+g(t)\,dW_t,$$</p>
+<p>where $W_t$ is standard Brownian motion and $g(t)$ is a scalar diffusion coefficient independent of position. Brownian increments over a short interval of length $h$ have covariance $hI_d$. Thus an Euler step is approximately</p>
+<p>$$X_{t+h}=X_t+f(X_t,t)h+g(t)\sqrt h\,\epsilon.$$</p>
+<p>For the variance-preserving process, expanding $\sqrt{1-\beta(t)h}$ to first order gives drift $f(x,t)=-\tfrac12\beta(t)x$ and diffusion coefficient $g(t)=\sqrt{\beta(t)}$.</p>
+<p>Let $q_t(x)$ denote the time-$t$ marginal density. Its score is the vector</p>
+<p>$$s_t(x)=\nabla_x\log q_t(x).$$</p>
+<p>It points in the local direction of increasing log density and is not a class score or a predicted probability.</p>
+<p>To avoid a sign ambiguity, introduce an increasing reverse clock $\tau=T-t$ and define $Y_\tau=X_{T-\tau}$. Under suitable smoothness, positivity, and time-reversal regularity assumptions, the reverse process has the form</p>
+<p>$$\boxed{dY_\tau=
+\left[-f(Y_\tau,T-\tau)
++g(T-\tau)^2s_{T-\tau}(Y_\tau)\right]d\tau
++g(T-\tau)\,d\bar W_\tau.}$$</p>
+<p>The score correction depends on the marginal data distribution. Merely negating the forward drift omits the information needed to infer likely predecessors.</p>
+<p>A useful sign check is the stationary standard-normal variance-preserving process. Its score is $s_t(x)=-x$. With constant $\beta$, the reverse drift becomes $+\tfrac12\beta x-\beta x=-\tfrac12\beta x$, matching the forward stationary drift. A formula that gives outward drift in this stationary example has mixed time conventions.</p>
+<p>This theory traces to work including <a href="https://www.sciencedirect.com/science/article/pii/0304414982900515">Anderson's 1982 reverse-time diffusion paper</a>. <a href="https://arxiv.org/abs/2011.13456">Song and colleagues</a> connect reverse SDEs and score estimation to modern generative modeling. The theorem uses assumptions on the process and density; it is not a central-limit argument that all continuous-time processes become Gaussian.</p>
+<h3 id="a-deterministic-flow-can-share-the-same-one-time-marginals">A deterministic flow can share the same one-time marginals</h3>
+<p>As a researched connection, the associated probability-flow ordinary differential equation uses</p>
+<p>$$\frac{dX_t}{dt}=f(X_t,t)-\frac12g(t)^2s_t(X_t).$$</p>
+<p>With the exact score and suitable regularity, it has the same time-indexed marginals as the forward SDE. It does not have the same random trajectories or joint path distribution.</p>
+<p>The factor of one half can be understood from the Fokker–Planck equation. The SDE density evolves as</p>
+<p>$$\partial_tq_t=-\nabla\cdot(fq_t)
++\frac12g(t)^2\Delta q_t.$$</p>
+<p>Because $q_ts_t=\nabla q_t$, the deterministic velocity above produces the same density equation through $\partial_tq_t=-\nabla\cdot(vq_t)$. This is a statement about marginal transport. Numerical integration and score-estimation errors still affect a practical sampler.</p>
+<h2 id="5-treating-the-entire-noisy-path-as-latent-gives-a-tractable-bound-5500">5. Treating the entire noisy path as latent gives a tractable bound <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI&amp;t=3300s">55:00</a></h2>
+<p>The observed object is $x_0$; the latent object is the whole path $x_{1:T}$. Choose the fixed forward conditional $q(x_{1:T}\mid x_0)$ as the variational distribution. The ELBO identity from Lecture 10 gives</p>
+<p>$$\log p_\theta(x_0)\ge
+\mathbb E_q\left[
+\log p_\theta(x_{0:T})-\log q(x_{1:T}\mid x_0)
+\right].$$</p>
+<p>This $q$ is an explicitly designed noising distribution, not generally the exact posterior $p_\theta(x_{1:T}\mid x_0)$ of the learned generative model. Training therefore optimizes a variational objective. It is not ordinary exact EM with an E-step recomputing the learned model's posterior until the bound is tight.</p>
+<p>Factor the forward conditional in reverse order while retaining its conditioning on the clean observation:</p>
+<p>$$q(x_{1:T}\mid x_0)=q(x_T\mid x_0)
+\prod_{t=2}^Tq(x_{t-1}\mid x_t,x_0).$$</p>
+<p>The learned joint factors as the terminal prior times reverse transitions. Substituting both factorizations and grouping log ratios gives the negative ELBO:</p>
+<p>$$-\operatorname{ELBO}(x_0)=
+\underbrace{\operatorname{KL}(q(x_T\mid x_0)\|p(x_T))}_{\text{terminal prior term}}
++\sum_{t=2}^T
+\mathbb E_{q(x_t\mid x_0)}
+\left[
+\operatorname{KL}\!\left(
+q(x_{t-1}\mid x_t,x_0)\|
+p_\theta(x_{t-1}\mid x_t)
+\right)\right]
+-\mathbb E_{q(x_1\mid x_0)}
+[\log p_\theta(x_0\mid x_1)].$$</p>
+<p>The expectation around each conditional KL is essential. A conditional divergence depends on the conditioning value; the chain rule averages it under the appropriate marginal distribution.</p>
+<p>There are three qualitatively different terms. The terminal term checks how well the final forward distribution matches the chosen prior. Intermediate terms train one-step denoising distributions. The final reconstruction term handles the clean endpoint. It must not be silently replaced by the same positive-variance Gaussian formula used for all intermediate times.</p>
+<p>For a fixed schedule and fixed terminal prior, the terminal term has no $\theta$ dependence, so it can be omitted when differentiating with respect to the reverse network. That does not make its value zero or make terminal-prior mismatch disappear at sampling time.</p>
+<p>The apparent advantage is now visible: although $q(x_{t-1}\mid x_t)$ depends on the unknown data distribution, the conditional $q(x_{t-1}\mid x_t,x_0)$ is Gaussian and computable. Training has access to the clean observation $x_0$ and can use that easier conditional as a target.</p>
+<h2 id="6-completing-the-square-produces-the-reverse-training-target-7400">6. Completing the square produces the reverse training target <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI&amp;t=4440s">74:00</a></h2>
+<p>For $t\ge2$, apply Bayes' rule with $x_0$ held fixed:</p>
+<p>$$q(x_{t-1}\mid x_t,x_0)\propto
+q(x_t\mid x_{t-1})q(x_{t-1}\mid x_0).$$</p>
+<p>Let $y=x_{t-1}$ for the algebra. Up to constants independent of $y$, the negative log density is</p>
+<p>$$\frac1{2\beta_t}\|x_t-\sqrt{\alpha_t}y\|^2
++\frac1{2(1-\bar\alpha_{t-1})}
+\|y-\sqrt{\bar\alpha_{t-1}}x_0\|^2.$$</p>
+<p>Collecting quadratic terms gives precision</p>
+<p>$$\left[\frac{\alpha_t}{\beta_t}
++\frac1{1-\bar\alpha_{t-1}}\right]I_d
+=\frac{1-\bar\alpha_t}
+{\beta_t(1-\bar\alpha_{t-1})}I_d.$$</p>
+<p>Collecting linear terms and multiplying by the inverse precision gives</p>
+<p>$$q(x_{t-1}\mid x_t,x_0)=
+\mathcal N(x_{t-1};\tilde\mu_t(x_t,x_0),\tilde\beta_tI_d),$$</p>
+<p>$$\boxed{\tilde\beta_t=
+\frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\beta_t,}$$</p>
+<p>$$\boxed{\tilde\mu_t=
+\frac{\sqrt{\bar\alpha_{t-1}}\beta_t}{1-\bar\alpha_t}x_0
++\frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}
+{1-\bar\alpha_t}x_t.}$$</p>
+<p>The mean combines the known clean endpoint and noisy observation. Its coefficients need not sum to one because the forward process also rescales the signal; it is not simply an ordinary convex average of two measurements in identical observation models.</p>
+<p>For the two-step sensor schedule $\beta_1=0.1$, $\beta_2=0.2$, we have $\bar\alpha_1=0.9$, $\bar\alpha_2=0.72$, and posterior variance $\tilde\beta_2=1/14$. With $x_0=2$ and $x_2=1$, posterior mean is</p>
+<p>$$\tilde\mu_2=
+\frac{\sqrt{0.9}(0.2)}{0.28}(2)
++\frac{\sqrt{0.8}(0.1)}{0.28}(1)
+\approx1.67470.$$</p>
+<p>Independently, the prior precision for $X_1\mid x_0$ is $1/0.1=10$, and the observation contributes $\alpha_2/\beta_2=4$. Total precision is 14, confirming the variance and completing-square calculation.</p>
+<p>The function below computes this conditional for an intermediate step. It requires matching finite arrays, a step variance in $(0,1)$, and a cumulative previous signal factor strictly between zero and one. Excluding the value one deliberately excludes the degenerate clean-endpoint case.</p>
+<pre><code class="language-python">import numpy as np
+
+
+def posterior_parameters(x0, xt, beta, alpha_bar_previous):
+    x0, xt = np.asarray(x0, dtype=float), np.asarray(xt, dtype=float)
+    if x0.shape != xt.shape or not x0.size:
+        raise ValueError(&quot;Clean and noisy values must have matching shapes&quot;)
+    if not np.isfinite(x0).all() or not np.isfinite(xt).all():
+        raise ValueError(&quot;Values must be finite&quot;)
+    if not np.isfinite(beta) or not 0 &lt; beta &lt; 1:
+        raise ValueError(&quot;Step variance must lie between zero and one&quot;)
+    if not np.isfinite(alpha_bar_previous) or not 0 &lt; alpha_bar_previous &lt; 1:
+        raise ValueError(&quot;Use an intermediate step with a noisy predecessor&quot;)
+    alpha = 1 - beta
+    denominator = 1 - alpha * alpha_bar_previous
+    variance = beta * (1 - alpha_bar_previous) / denominator
+    mean = (
+        np.sqrt(alpha_bar_previous) * beta * x0
+        + np.sqrt(alpha) * (1 - alpha_bar_previous) * xt
+    ) / denominator
+    return mean, variance
+
+
+mean, variance = posterior_parameters([2], [1], 0.2, 0.9)
+precision = 1 / 0.1 + 0.8 / 0.2
+independent_mean = (
+    np.sqrt(0.9) * 2 / 0.1 + np.sqrt(0.8) * 1 / 0.2
+) / precision
+assert np.isclose(variance, 1 / 14)
+assert np.allclose(mean, independent_mean)
+assert np.allclose(mean, [1.67470014])
+</code></pre>
+<h3 id="matching-gaussian-means-turns-a-kl-into-a-regression-loss">Matching Gaussian means turns a KL into a regression loss</h3>
+<p>For Gaussian distributions with means $m_1,m_2$ and the same positive definite covariance $\Sigma$,</p>
+<p>$$\operatorname{KL}(\mathcal N(m_1,\Sigma)\|
+\mathcal N(m_2,\Sigma))
+=\frac12(m_1-m_2)^\top\Sigma^{-1}(m_1-m_2).$$</p>
+<p>The determinant and covariance-trace terms cancel; the mean displacement remains. If the learned intermediate variance is chosen as $\sigma_t^2=\tilde\beta_t$, its KL training term is</p>
+<p>$$\frac1{2\tilde\beta_t}
+\|\mu_\theta(x_t,t)-\tilde\mu_t(x_t,x_0)\|^2.$$</p>
+<p>In the scalar example, a mean error of 0.2 gives KL $0.2^2/(2/14)=0.28$. The same mean error is penalized more strongly when posterior uncertainty is smaller. This explains why variance-dependent coefficients cannot automatically be discarded when combining losses across different times.</p>
+<p>At $t=1$, $\bar\alpha_0=1$ and $\tilde\beta_1=0$: conditioning on the clean endpoint makes the predecessor exactly $x_0$. This is a point mass, not an ordinary positive-variance Gaussian density. The endpoint reconstruction term in the ELBO handles this case separately.</p>
+<p>The next lecture reparameterizes the learned mean in terms of predicted noise. That transformation yields a convenient regression target sampled directly from the forward marginal, while preserving an explicit distinction between the exact weighted variational objective and a simplified training loss.</p>
+<h2 id="exercises">Exercises</h2>
+<ol>
+<li><strong>Derive.</strong> Prove the telescoping variance identity for the forward chain and explain why effective noises at different times on one path are not independent.</li>
+<li><strong>Compute.</strong> For $\beta_1=0.1$, $\beta_2=0.2$, and $x_0=2$, obtain the conditional law of $X_2$. Then compute the posterior law of $X_1$ given $X_2=1$ and $X_0=2$.</li>
+<li><strong>Counterexample.</strong> Explain why a forward Gaussian corruption does not imply a Gaussian reverse conditional, using a two-point clean distribution.</li>
+<li><strong>Derive.</strong> Starting from the trajectory factorizations, identify the three types of terms in the negative ELBO and state which expectations accompany the intermediate KL terms.</li>
+<li><strong>Check assumptions.</strong> A derivation says that every $\beta_t&gt;0$ guarantees complete signal destruction, that a reverse SDE must negate only the drift, and that $t=1$ can use the intermediate Gaussian KL unchanged. Diagnose all three claims.</li>
+</ol>
+<details>
+<summary>Solutions</summary>
+<ol>
+<li>
+<p>Replace $\beta_s$ by $1-\alpha_s$ inside each coefficient variance. Each summand becomes $\prod_{r=s+1}^t\alpha_r-\prod_{r=s}^t\alpha_r$, so adjacent products cancel, leaving $1-\bar\alpha_t$. Effective noise at a later time contains earlier innovations with nonzero coefficients, so it shares random terms with earlier effective noise. Correct one-time marginals do not specify the joint trajectory.</p>
+</li>
+<li>
+<p>The direct marginal is $\mathcal N(2\sqrt{0.72},0.28)$. For the reverse conditional, prior precision is 10 and likelihood precision is 4, so the posterior variance is $1/14$. The precision-weighted linear term is $2\sqrt{0.9}/0.1+\sqrt{0.8}/0.2$. Dividing by 14 gives mean approximately 1.67470. This posterior conditions on the clean endpoint; it is not the unknown marginal reverse conditional that would average over possible clean data.</p>
+</li>
+<li>
+<p>If $X_0$ is equally likely to be $-2$ or 2, observing a noisy $X_1=x$ changes the probabilities of those two values but does not turn them into a continuous Gaussian variable. Bayes' rule gives a two-point posterior with weights proportional to the corresponding Gaussian likelihoods. Finite-step reverse conditionals can remain multimodal or discrete despite Gaussian forward noise.</p>
+</li>
+<li>
+<p>Reverse-factor the fixed conditional path as $q(x_T\mid x_0)\prod_{t=2}^Tq(x_{t-1}\mid x_t,x_0)$, and compare it with $p(x_T)\prod_{t=1}^Tp_\theta(x_{t-1}\mid x_t)$. The terminal ratio gives a prior KL, intermediate ratios give conditional KLs averaged over $q(x_t\mid x_0)$, and the unmatched final generative factor gives $-\mathbb E_{q(x_1\mid x_0)}\log p_\theta(x_0\mid x_1)$. All are conditioned on the training observation before averaging over the dataset.</p>
+</li>
+<li>
+<p>Positive noise increments can have finite total strength: $\beta_t=1/(t+1)^2$ leaves cumulative signal factor tending to $1/2$. The increasing reverse clock requires drift $-f+g^2\nabla\log q_t$, not merely $-f$, under the stated scalar-diffusion assumptions. Finally, the clean-endpoint posterior has zero variance, so substituting it into a positive-variance Gaussian KL introduces a division by zero and ignores the separate reconstruction term.</p>
+</li>
+</ol>
+</details>
+<h2 id="primary-references-and-evidence-boundaries">Primary references and evidence boundaries</h2>
+<p>The <a href="https://www.youtube.com/watch?v=dqUMCzWjZSI">recording</a> grounds the sequence and the variational construction. Primary references are <a href="https://arxiv.org/abs/2006.11239">Ho et al., DDPM</a>, <a href="https://arxiv.org/abs/2011.13456">Song et al., score-based SDE modeling</a>, and <a href="https://www.sciencedirect.com/science/article/pii/0304414982900515">Anderson's reverse-time diffusion theory</a>. The scalar schedule, telescoping counterexample, posterior calculation, probability-flow derivation, and exercises are original exposition. Gaussian reverse kernels, finite-time prior matching, and exact-posterior EM are explicitly distinguished rather than treated as interchangeable assumptions.</p><nav class="pager" aria-label="Chapter sequence"><a href="lecture-10.html">Previous ·  Expectation–maximization and principal component analysis</a><a href="lecture-12.html">Next ·  Learning to denoise, then learning to adapt</a></nav></main><aside class="side"><details class="toc" open><summary>On this page</summary><ul><li><a href="#1-a-generative-model-specifies-a-distribution-not-one-reconstruction-0000">1. A generative model specifies a distribution, not one reconstruction 00:00</a></li><li><a href="#2-unrolling-the-chain-gives-direct-sampling-at-any-noise-level-1400">2. Unrolling the chain gives direct sampling at any noise level 14:00</a></li><li><a href="#3-the-reverse-conditional-contains-uncertainty-about-the-past-2800">3. The reverse conditional contains uncertainty about the past 28:00</a></li><li><a href="#4-reverse-time-sdes-explain-the-role-of-the-score-4300">4. Reverse-time SDEs explain the role of the score 43:00</a></li><li><a href="#5-treating-the-entire-noisy-path-as-latent-gives-a-tractable-bound-5500">5. Treating the entire noisy path as latent gives a tractable bound 55:00</a></li><li><a href="#6-completing-the-square-produces-the-reverse-training-target-7400">6. Completing the square produces the reverse training target 74:00</a></li><li><a href="#exercises">Exercises</a></li><li><a href="#primary-references-and-evidence-boundaries">Primary references and evidence boundaries</a></li></ul></details></aside></div><footer class="shell foot">Independent study edition · Prepared 25 September 2026 · Based on caption tracks and primary research · <a href="source-map.html">Coverage and attribution</a> · Offline mathematics: <a href="assets/mathjax-LICENSE">MathJax license</a></footer></body></html>
