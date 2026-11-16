@@ -1,0 +1,74 @@
+name: Check and publish lecture notes
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lecture-pages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PAGES_DIRECTORY: .
+  MATH_PAGE_GLOB: 'lecture-*.html'
+
+jobs:
+  check:
+    name: Math layout on desktop and mobile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Install the browser checker
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Stage and check the published files
+        shell: bash
+        run: |
+          site="$RUNNER_TEMP/lecture-pages"
+          mkdir -p "$site"
+          if [[ "$PAGES_DIRECTORY" == "." ]]; then
+            git archive HEAD | tar -x -C "$site"
+          else
+            git archive "HEAD:$PAGES_DIRECTORY" | tar -x -C "$site"
+          fi
+          test -f "$site/index.html"
+          mapfile -d '' -t pages < <(find "$site" -type f -path "$site/$MATH_PAGE_GLOB" -print0 | sort -z)
+          if (( ${#pages[@]} == 0 )); then
+            echo "::error::No math pages match $MATH_PAGE_GLOB in $PAGES_DIRECTORY"
+            exit 1
+          fi
+          python tools/check_math_layout.py "${pages[@]}"
+      - name: Upload checked site
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: ${{ runner.temp }}/lecture-pages
+
+  deploy:
+    name: Deploy checked notes to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
